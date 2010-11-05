@@ -3,4 +3,5 @@
 .settings/
 .svn/
 META-INF/
+target/
 
