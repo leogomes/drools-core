@@ -1,0 +1,93 @@
+TestCase "LeftUnlinking"
+
+Setup
+	ObjectTypeNode:
+	    otnLeft1, org.drools.Person;
+	LeftInputAdapterNode:
+	    lian0, otnLeft1;
+	ObjectTypeNode:
+	    otnRight1, org.drools.Person;
+	ObjectTypeNode:
+	    otnRight2, org.drools.Person;
+	Binding:
+	     p1, 0, org.drools.Person, age;
+	JoinNode:
+	    join1, lian0, otnRight1;
+	    age, !=, p1;
+	JoinNode:
+	    join2, join1, otnRight2;
+	    age, !=, p1;
+	Facts:
+	    new org.drools.Person('darth', 35), new org.drools.Person('bobba', 36),
+	    new org.drools.Person('yoda', 37), new org.drools.Person('luke', 38),
+	    new org.drools.Person('dave', 33), new org.drools.Person('bob', 32);
+
+Test "LeftUnlinking.nodeTestCase"	    
+	/**
+	 * check single left assertion and no memory population
+	 */
+	assert:
+	    otnLeft1, [h0];
+	join1:
+	    leftMemory, [];
+	join2:
+	    leftMemory, []; 
+	      
+	/**    
+	 * check single right assertion and retraction
+	 */
+	assert:
+	    otnRight1, [h1];
+	join1:
+        leftMemory, [[h0]];
+	    rightMemory, [h1];
+	join2:
+	    leftMemory, [];
+	    
+	    
+    assert:
+        otnRight2, [h2];
+    join2:
+    	leftMemory, [[h0,h1]];	        
+    	rightMemory, [h2];
+    	
+    	
+	retract:
+	    otnRight1, [h1];
+	    
+	// unlink left side, and clean memory	    
+	join1:
+        leftMemory, [];
+	    rightMemory, [];
+	join2:
+        leftMemory, [];
+	    rightMemory, [h2];
+	
+ 
+	retract:
+	    otnLeft1, [h0];
+	    
+    // right side should be empty, but not unlinked 	    
+	join1:
+	    rightMemory, [];
+        leftMemory, [];
+
+    // left is unlinked
+    assert:
+    	otnLeft1, [h5];
+    join1:
+    	leftMemory, [];        
+    	rightMemory, [];
+    	
+
+	// asserting right will now link and populate left.    	        
+    assert:
+    	otnRight1, [h1];
+    join1:
+    	leftMemory, [[h5]];
+    	rightMemory, [h1];
+    join2:
+    	leftMemory, [[h5, h1]];
+    	rightMemory, [h2];        
+    	        
+             
