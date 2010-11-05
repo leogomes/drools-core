@@ -200,7 +200,7 @@ public class ReteDslTestEngine {
             // run tearDown
             run(context, testCase.getTearDown(), result);
             result.result = Result.SUCCESS;
-        } catch (Exception e) {
+        } catch (Throwable e) {
             result.result = Result.ERROR;
             result.errorMsgs.add(e.getMessage());
         }

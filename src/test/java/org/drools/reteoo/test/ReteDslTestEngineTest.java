@@ -319,7 +319,12 @@ public class ReteDslTestEngineTest extends TestCase {
         Map<String, Object> map = result.context;
 
         JoinNode join1 = (JoinNode) map.get( "join1" );
+        ObjectTypeNode otn1 = (ObjectTypeNode) map.get( "otn1" );
+        ObjectTypeNode otn2 = (ObjectTypeNode) map.get( "otn2" );
+        
         assertNotNull( join1 );
+        assertNotNull( otn1 );
+        assertNotNull( otn2 );
 
         PropagationContext context = new PropagationContextImpl( 0,
                                                                  PropagationContext.ASSERTION,
@@ -341,13 +346,14 @@ public class ReteDslTestEngineTest extends TestCase {
         join1.assertLeftTuple( tuple0,
                                context,
                                workingMemory );
-        // check memories, left memory is populated, right memory is emptys
-        assertEquals( 1,
+        // check memories, left memory is not populated since
+        // initially left side is unlinked.
+        assertEquals( 0,
                       memory.getLeftTupleMemory().size() );
         assertEquals( 0,
                       memory.getRightTupleMemory().size() );
 
-        // assert tuple, should add left memory should be 2
+        // assert tuple, should add left memory should be still 0.
         final DefaultFactHandle f1 = new DefaultFactHandle( 1,
                                                             0 );
         final LeftTuple tuple1 = new LeftTuple( f1,
@@ -356,8 +362,20 @@ public class ReteDslTestEngineTest extends TestCase {
         join1.assertLeftTuple( tuple1,
                                context,
                                workingMemory );
-        assertEquals( 2,
+        assertEquals( 0,
                       memory.getLeftTupleMemory().size() );
+        
+        // assert object
+        final DefaultFactHandle f2 = new DefaultFactHandle( 2,
+                                                            0 );
+        otn1.assertObject(f0, context, workingMemory);
+        otn1.assertObject(f1, context, workingMemory);
+        otn2.assertObject(f2, context, workingMemory);
+     
+        // Now, yes, there should be two.
+        assertEquals( 2,
+                memory.getLeftTupleMemory().size() );
+
 
         LeftTuple leftTuple = memory.getLeftTupleMemory().getFirst( (LeftTuple) null );
         assertEquals( tuple0,
@@ -742,7 +760,7 @@ public class ReteDslTestEngineTest extends TestCase {
     }
     
     public void testNotNodeStep() throws IOException {
-        String str = "TestCase 'testOTN'\nTest 'dummy'\n";
+        String str = "TestCase 'testOTN'\nTest 'testOTN'\n";
         str += "ObjectTypeNode:\n";
         str += "    otn0, org.drools.Person;\n";
         str += "LeftInputAdapterNode:\n";

@@ -180,21 +180,22 @@ public class JoinNodeTest extends DroolsTestCase {
 
 		// assert tuple, should add one to left memory
 		this.node.assertLeftTuple(tuple0, this.context, this.workingMemory);
-		// check memories, left memory is populated, right memory is emptys
-		assertEquals(1, this.memory.getLeftTupleMemory().size());
+		// check memories, left memory is empty since it's unlinked in the beginning.
+		assertEquals(0, this.memory.getLeftTupleMemory().size());
 		assertEquals(0, this.memory.getRightTupleMemory().size());
 
 		// assert tuple, should add left memory should be 2
 		final DefaultFactHandle f1 = new DefaultFactHandle(1, "cheese");
 		final LeftTuple tuple1 = new LeftTuple(f1, this.node, true);
 		this.node.assertLeftTuple(tuple1, this.context, this.workingMemory);
-		assertEquals(2, this.memory.getLeftTupleMemory().size());
+		// Still empty
+		assertEquals(0, this.memory.getLeftTupleMemory().size());
+		
 
 		LeftTuple leftTuple = this.memory.getLeftTupleMemory().getFirst(
 				(LeftTuple) null);
 
-		assertEquals(tuple0, leftTuple);
-		assertEquals(tuple1, leftTuple.getNext());
+		assertNull(leftTuple);
 	}
 
 	/**
@@ -455,22 +456,22 @@ public class JoinNodeTest extends DroolsTestCase {
 
 		joinNode.assertLeftTuple(tuple1, this.context, workingMemory);
 
-		final String string1 = "string1";
-		final DefaultFactHandle string1Handle = new DefaultFactHandle(1,
-				string1);
+		// assert doesn't add anything because left is initially empty
+		assertLength(0, sink1.getAsserted());
+		
+        final String string1 = "string1";
+	    final DefaultFactHandle string1Handle = new DefaultFactHandle(1,
+	                string1);
 
-		joinNode.assertObject(string1Handle, this.context, workingMemory);
+		// let's add it also to the source, so that the JoinNode
+		// gets properly updated
+		this.objectSource.addFact(string1Handle);
 
-		assertLength(1, sink1.getAsserted());
+		joinNode.rightInput.updateSink(joinNode, this.context, workingMemory);
+		
+		assertEquals(1, this.tupleSource.getUdated());
 
-		// Add the new sink, this should be updated from the re-processed
-		// joinnode memory
-		final MockLeftTupleSink sink2 = new MockLeftTupleSink(3);
-		assertLength(0, sink2.getAsserted());
-
-		joinNode.updateSink(sink2, this.context, workingMemory);
-
-		assertLength(1, sink2.getAsserted());
+		
 	}
 
 }
