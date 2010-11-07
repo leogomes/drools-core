@@ -153,7 +153,8 @@ public class ReteDslTestEngineTest extends TestCase {
         List<List<InternalFactHandle>> outterList = new ArrayList<List<InternalFactHandle>>();
         outterList.add(list);
         ReteDslTestEngine engine = new ReteDslTestEngine();
-        System.out.println(engine.print(outterList));
+        
+        assertEquals("[h0, h1, h2]", engine.print(outterList));
         
         
         

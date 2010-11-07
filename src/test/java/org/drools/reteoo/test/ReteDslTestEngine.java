@@ -431,15 +431,23 @@ public class ReteDslTestEngine {
         
         StringBuilder b = new StringBuilder();
         
-        for (Object tuple : tuples) {
+            
+        
+    for (java.util.Iterator iterator = tuples.iterator(); iterator.hasNext();) {
+        
+            Object tuple = (Object) iterator.next();
+
             if (tuple instanceof List<?>) {
                 b.append("[");
                 b.append(print((List<?>) tuple));
                 b.append("]");
             } else {
                 InternalFactHandle h = (InternalFactHandle) tuple;
-                b.append("h").append(h.getId()-1).append(" ");
+                b.append("h").append(h.getId()-1).append("");
             }
+            
+            if(iterator.hasNext()) 
+                b.append(", ");
         }
     
         return b.toString();
