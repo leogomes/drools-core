@@ -24,7 +24,6 @@ import org.drools.reteoo.test.dsl.NodeTestCase;
 import org.drools.reteoo.test.dsl.NodeTestDef;
 import org.junit.runner.Description;
 import org.junit.runner.Runner;
-import org.junit.runner.notification.Failure;
 import org.junit.runner.notification.RunNotifier;
 
 /**

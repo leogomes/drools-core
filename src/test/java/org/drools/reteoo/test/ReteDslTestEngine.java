@@ -22,6 +22,7 @@ import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -334,6 +335,23 @@ public class ReteDslTestEngine {
                             .getNext()) {
                         leftTuples.add(leftTuple);
                     }
+                    
+                    // lgomes: Need to sort the tuples here, because we might have asserted things 
+                    // in the wrong order, because linking a node's side means populating its memory
+                    // from the OTN which stores things in a hash-set, so insertion order is not kept. 
+                    Collections.sort(leftTuples, new Comparator<LeftTuple>() {
+                        
+                        public int compare(LeftTuple o1, LeftTuple o2) {
+                            int diff = o1.getLastHandle().getId() - o2.getLastHandle().getId();
+                            
+                            if(diff == 0) 
+                                return diff;
+                            
+                            return diff > 0 ? 1 : -1;
+                        }
+                    });
+
+                    
                     List<List<InternalFactHandle>> actualLeftTuples = new ArrayList<List<InternalFactHandle>>(
                             leftTuples.size());
                     for (LeftTuple leftTuple : leftTuples) {
@@ -341,12 +359,13 @@ public class ReteDslTestEngine {
                                 .asList(leftTuple.toFactHandles());
                         actualLeftTuples.add(tupleHandles);
                     }
+                    
 
                     if (!expectedLeftTuples.equals(actualLeftTuples)) {
                         throw new AssertionFailedError("line " + step.getLine()
                                 + ": left Memory expected "
-                                + expectedLeftTuples + " actually "
-                                + actualLeftTuples);
+                                + print(expectedLeftTuples) + " actually "
+                                + print(actualLeftTuples));
                     }
 
                 } else if (cmd[0].equals("rightMemory")) {
@@ -406,6 +425,24 @@ public class ReteDslTestEngine {
             throw new IllegalArgumentException("line " + step.getLine()
                     + ": unable to execute step " + step, e);
         }
+    }
+
+    protected String print(List<?> tuples) {
+        
+        StringBuilder b = new StringBuilder();
+        
+        for (Object tuple : tuples) {
+            if (tuple instanceof List<?>) {
+                b.append("[");
+                b.append(print((List<?>) tuple));
+                b.append("]");
+            } else {
+                InternalFactHandle h = (InternalFactHandle) tuple;
+                b.append("h").append(h.getId()-1).append(" ");
+            }
+        }
+    
+        return b.toString();
     }
 
     private void riaNode(DslStep step, RightInputAdapterNode node,

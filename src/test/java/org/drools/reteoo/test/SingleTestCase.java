@@ -57,12 +57,12 @@ public class SingleTestCase
             try {
                 is = new FileInputStream( file );
                 NodeTestCase tcase = ReteDslTestEngine.compile( is );
-                tcase.setFileName(file.getAbsolutePath());
                 if ( tcase.hasErrors() ) {
                     throw new IllegalArgumentException( "Error parsing and loading testcase: " + file.getAbsolutePath() + "\n" + tcase.getErrors().toString() );
                 }
                 for( NodeTestDef test : tcase.getTests() ) {
                     if( test.getName().equals( testName ) ) {
+                        result.setFileName(file.getName());
                         result.setName( tcase.getName() );
                         result.setImports( tcase.getImports() );
                         result.setSetup( tcase.getSetup() );

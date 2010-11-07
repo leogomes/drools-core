@@ -141,6 +141,23 @@ public class ReteDslTestEngineTest extends TestCase {
         
         
     }
+    
+    public void testPrint() {
+        InternalFactHandle h0 = new DefaultFactHandle(1, new Object());
+        InternalFactHandle h1 = new DefaultFactHandle(2, new Object());
+        InternalFactHandle h2 = new DefaultFactHandle(3, new Object());
+        List<InternalFactHandle> list = new ArrayList<InternalFactHandle>();
+        list.add(h0);
+        list.add(h1);
+        list.add(h2);
+        List<List<InternalFactHandle>> outterList = new ArrayList<List<InternalFactHandle>>();
+        outterList.add(list);
+        ReteDslTestEngine engine = new ReteDslTestEngine();
+        System.out.println(engine.print(outterList));
+        
+        
+        
+    }
 
     private void checkCommand(String[] expected,
                            String[] actual) {
@@ -548,7 +565,9 @@ public class ReteDslTestEngineTest extends TestCase {
         str += "    otn1,[h1, h3];\n";
         str += "    otn2,[h0, h2];\n";
         str += "join1:\n";
-        str += "    leftMemory,[[h1], [h3]];\n";
+        // Is memory order important? Is it inverted due to the use of update
+        // instead of regular assert?
+        str += "    leftMemory,[[h3], [h1]];\n";
         str += "    rightMemory,[h0, h2];\n";
         str += "retract:\n";
         str += "    otn1,[h1];\n";
@@ -598,11 +617,11 @@ public class ReteDslTestEngineTest extends TestCase {
         str += "    otn2, [h0, h2];\n";
         str += "    otn3, [h4];\n";
         str += "join1:\n";
-        str += "    leftMemory, [[h1], [h3]];\n";
+        str += "    leftMemory, [[h3], [h1]];\n";
         str += "    rightMemory, [h0, h2];\n";
         str += "join2:\n";
-        str += "    leftMemory, [[h1, h0], [h3, h0],\n";
-        str += "                [h1, h2], [h3, h2]];\n";
+        str += "    leftMemory, [[h3, h0],[h3, h2],\n";
+        str += "                 [h1, h0], [h1, h2]];\n";
         str += "    rightMemory, [h4];\n";
         str += "retract:\n";
         str += "    otn1, [h1];\n";
@@ -714,12 +733,11 @@ public class ReteDslTestEngineTest extends TestCase {
         str += "    otn1, [h1, h3, h4];\n";
         str += "    otn2, [h0, h2];\n";
         str += "join1:\n";
-        str += "    leftMemory, [[h1], [h3]];\n"; // check leftMemory twice, as we have two index buckets
+        str += "    leftMemory, [[h3], [h1]];\n"; // check leftMemory twice, as we have two index buckets
         str += "    leftMemory, [[h4]];\n";
         str += "    rightMemory, [h0, h2];\n";
         str += "join2:\n";
-        str += "    leftMemory, [[h1, h0], [h3, h0],\n";
-        str += "                [h1, h2], [h3, h2]];\n";
+        str += "    leftMemory, [];\n"; // empty since left side is unlinked.
         str += "    rightMemory, [];\n";  
         str += "With:\n";
         str += "    h1, age = 36;\n";       
@@ -730,8 +748,7 @@ public class ReteDslTestEngineTest extends TestCase {
         str += "    leftMemory, [[h4], [h1]];\n"; // notice it's moved to the new bucket   
         str += "    rightMemory, [h0, h2];\n";
         str += "join2:\n";
-        str += "    leftMemory, [[h3, h0],\n";
-        str += "                [h3, h2]];\n";
+        str += "    leftMemory, [];\n"; // still unlinked
         str += "    rightMemory, [];\n";
         
         NodeTestResult result = executeTest( str );
@@ -755,7 +772,7 @@ public class ReteDslTestEngineTest extends TestCase {
         assertEquals( 0,
                       memory.getRightTupleMemory().size() );
 
-        assertEquals( 2,
+        assertEquals( 0,
                       memory.getLeftTupleMemory().size() );         
     }
     
@@ -780,7 +797,7 @@ public class ReteDslTestEngineTest extends TestCase {
         str += "    otn0, [h0];\n";
         str += "    otn1, [h1];\n";
         str += "sink:\n";
-        str += "    verify, assertLeft, count, 1;\n";    
+        str += "    verify,  assertLeft, count, 1;\n";    
         str += "With:\n";
         str += "    h1, age = 36;\n";
         str += "modify:\n";

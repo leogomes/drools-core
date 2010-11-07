@@ -20,7 +20,8 @@ Setup
 	Facts:
 	    new org.drools.Person('darth', 34), new org.drools.Person('bobba', 34),
 	    new org.drools.Person('yoda', 34), new org.drools.Person('luke', 34),
-	    new org.drools.Person('dave', 34), new org.drools.Person('bob', 34);   
+	    new org.drools.Person('dave', 34), new org.drools.Person('bob', 34),
+	    new org.drools.Person('dude', 34);   
 	  
 Test "Node Index Test"
 	/**
@@ -31,11 +32,23 @@ Test "Node Index Test"
 	    otnRight1, [h3, h4, h5];
 	join1:
 	    leftMemory, [[h0], [h1], [h2]];
-	    rightMemory, [h3, h4, h5];               
+	    rightMemory, [h3, h4, h5];
 	join2:
+	    leftMemory, []; 					// Unlinked
+	    rightMemory, [];					// Linked, but empty
+	    
+    assert:
+    	otnRight2, [h6];	                   
+	join2:
+/*		    leftMemory, [[h3, h2], [h3, h1], [h3, h0],
+	                [h4, h0], [h4, h1], [h4, h0],
+	                [h5, h0], [h5, h1], [h5, h0]];
+*/	
+
 	    leftMemory, [[h0, h3], [h1, h3], [h2, h3],
 	                [h0, h4], [h1, h4], [h2, h4],
 	                [h0, h5], [h1, h5], [h2, h5]];
+        rightMemory, [h6];	                
 	               
 	With:
 	    h1, age = 35;

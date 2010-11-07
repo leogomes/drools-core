@@ -33,8 +33,10 @@ import java.util.Map;
 
 import org.drools.common.InternalFactHandle;
 import org.drools.common.InternalWorkingMemory;
+import org.drools.reteoo.JoinNode;
 import org.drools.reteoo.LeftTuple;
 import org.drools.reteoo.LeftTupleSink;
+import org.drools.reteoo.LeftTupleSinkNode;
 import org.drools.reteoo.ObjectSinkNode;
 import org.drools.reteoo.RightTuple;
 import org.drools.reteoo.RightTupleSink;

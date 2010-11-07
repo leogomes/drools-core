@@ -271,6 +271,7 @@ public class ObjectTypeNode extends ObjectSource
                            final PropagationContext context,
                            final InternalWorkingMemory workingMemory) {
         final ObjectHashSet memory = (ObjectHashSet) workingMemory.getNodeMemory( this );
+        
         Iterator it = memory.iterator();
         for ( ObjectEntry entry = (ObjectEntry) it.next(); entry != null; entry = (ObjectEntry) it.next() ) {
             sink.assertObject( (InternalFactHandle) entry.getValue(),

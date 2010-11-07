@@ -30,7 +30,7 @@ Test "Exists node assert/retract test"
 	assert:
 	    otnLeft1, [h0];
 	exists1:
-	    leftMemory, [[h0]];
+	    leftMemory, []; // Nothing due to left side unlinked.
 	join2:
 	    leftMemory, [];        
 	retract:
@@ -60,7 +60,7 @@ Test "Exists node assert/retract test"
 	assert:
 	    otnLeft1, [h0];  
 	exists1:
-	    leftMemory, [[h0]];  
+	    leftMemory, []; // unlinked.  
 	    rightMemory, [];  
 	join2:
 	    leftMemory, []; 

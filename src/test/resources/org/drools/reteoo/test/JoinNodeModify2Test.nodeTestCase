@@ -25,8 +25,11 @@ Test "Join node duplications check"
 	assert:
 	    join1, [[h0], [h1], [h2]]; // asserting tuples on the left
 	    join1, [h3, h4, h5];       // asserting facts on the right
-	sink:
-	    verify, assertLeft, count, 9; // cross product
+
+// lgomes: This is actually not called anymore, since the population of the left input
+// is now done via an updateSink call.	    
+//	sink:
+//	    verify, assertLeft, count, 9; // cross product
 
 	With:
 	    h0, age = 37;
