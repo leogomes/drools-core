@@ -203,7 +203,7 @@ public class ReteDslTestEngine {
             result.result = Result.SUCCESS;
         } catch (Throwable e) {
             result.result = Result.ERROR;
-            result.errorMsgs.add(e.getMessage());
+            result.errorMsgs.add(e.toString());
         }
         return result;
     }
@@ -312,7 +312,7 @@ public class ReteDslTestEngine {
                     if (expectedLeftTuples.isEmpty() && leftMemory.size() != 0) {
                         throw new AssertionFailedError("line " + step.getLine()
                                 + ": left Memory expected [] actually "
-                                + leftMemory);
+                                + print(leftMemory));
                     } else if (expectedLeftTuples.isEmpty()
                             && leftMemory.size() == 0) {
                         return;
@@ -339,26 +339,9 @@ public class ReteDslTestEngine {
                     // lgomes: Need to sort the tuples here, because we might have asserted things 
                     // in the wrong order, because linking a node's side means populating its memory
                     // from the OTN which stores things in a hash-set, so insertion order is not kept. 
-                    Collections.sort(leftTuples, new Comparator<LeftTuple>() {
-                        
-                        public int compare(LeftTuple o1, LeftTuple o2) {
-                            int diff = o1.getLastHandle().getId() - o2.getLastHandle().getId();
-                            
-                            if(diff == 0) 
-                                return diff;
-                            
-                            return diff > 0 ? 1 : -1;
-                        }
-                    });
-
+                    Collections.sort(leftTuples, new LeftTupleComparator());
                     
-                    List<List<InternalFactHandle>> actualLeftTuples = new ArrayList<List<InternalFactHandle>>(
-                            leftTuples.size());
-                    for (LeftTuple leftTuple : leftTuples) {
-                        List<InternalFactHandle> tupleHandles = Arrays
-                                .asList(leftTuple.toFactHandles());
-                        actualLeftTuples.add(tupleHandles);
-                    }
+                    List<List<InternalFactHandle>> actualLeftTuples = getHandlesList(leftTuples);
                     
 
                     if (!expectedLeftTuples.equals(actualLeftTuples)) {
@@ -427,29 +410,56 @@ public class ReteDslTestEngine {
         }
     }
 
+    private List<List<InternalFactHandle>> getHandlesList(
+            List<LeftTuple> leftTuples) {
+        List<List<InternalFactHandle>> actualLeftTuples = new ArrayList<List<InternalFactHandle>>(
+                leftTuples.size());
+        for (LeftTuple leftTuple : leftTuples) {
+            List<InternalFactHandle> tupleHandles = Arrays
+                    .asList(leftTuple.toFactHandles());
+            actualLeftTuples.add(tupleHandles);
+        }
+        return actualLeftTuples;
+    }
+
+    private String print(LeftTupleMemory leftMemory) {
+        
+        List<LeftTuple> tuples = new ArrayList<LeftTuple>();
+        Iterator it = leftMemory.iterator();
+        for ( LeftTuple tuple = (LeftTuple) it.next(); tuple != null; tuple = (LeftTuple) it.next() ) {
+            tuples.add(tuple);
+        }
+        
+        Collections.sort(tuples, new LeftTupleComparator());
+
+        return print(getHandlesList(tuples));
+    }
+
+    /** Provides better error messages. */
     protected String print(List<?> tuples) {
         
         StringBuilder b = new StringBuilder();
         
+        for (java.util.Iterator iterator = tuples.iterator(); iterator.hasNext();) {
             
-        
-    for (java.util.Iterator iterator = tuples.iterator(); iterator.hasNext();) {
-        
-            Object tuple = (Object) iterator.next();
-
-            if (tuple instanceof List<?>) {
-                b.append("[");
-                b.append(print((List<?>) tuple));
-                b.append("]");
-            } else {
-                InternalFactHandle h = (InternalFactHandle) tuple;
-                b.append("h").append(h.getId()-1).append("");
-            }
-            
-            if(iterator.hasNext()) 
-                b.append(", ");
-        }
+                Object tuple = (Object) iterator.next();
     
+                if (tuple instanceof List<?>) {
+                    b.append("[");
+                    b.append(print((List<?>) tuple));
+                    b.append("]");
+                } else if (tuple instanceof InternalFactHandle){
+                    InternalFactHandle h = (InternalFactHandle) tuple;
+                    b.append("h").append(h.getId()-1);
+                }
+                
+                if(iterator.hasNext()) 
+                    b.append(", ");
+            }
+
+        if (b.length() == 0)
+            return "[]";
+        
         return b.toString();
     }
 
@@ -878,6 +888,27 @@ public class ReteDslTestEngine {
         NodeTestDSLParser parser = new NodeTestDSLParser(new CommonTokenStream(
                 lexer));
         return parser;
+    }
+
+    private final class LeftTupleComparator implements Comparator<LeftTuple> {
+        public int compare(LeftTuple o1, LeftTuple o2) {
+            
+            InternalFactHandle[] h1 = o1.getFactHandles();
+            InternalFactHandle[] h2 = o2.getFactHandles();
+            
+            // Handles have to be compared in the inverse order.
+            for (int i = (h1.length-1); i > 0; i--) {
+                
+                int diff = h1[i].getId() - h2[i].getId();
+            
+                // Will continue comparing handles until
+                // a difference is found.
+                if (diff != 0)
+                    return diff;
+            }
+            
+            return 0;
+        }
     }
 
     public static class EmptyNotifier extends RunNotifier {

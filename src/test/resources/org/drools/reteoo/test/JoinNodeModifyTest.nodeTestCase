@@ -20,7 +20,8 @@ Setup
 	Facts:
 	    new org.drools.Person('darth', 34), new org.drools.Person('bobba', 35),
 	    new org.drools.Person('yoda', 36), new org.drools.Person('luke', 37),
-	    new org.drools.Person('dave', 38), new org.drools.Person('bob', 39); 
+	    new org.drools.Person('dave', 38), new org.drools.Person('bob', 39),
+	    new org.drools.Person('john', 40); 
 
 Test "Join Node Modify test"	     
 	/**    
@@ -31,7 +32,7 @@ Test "Join Node Modify test"
 	modify:
 	    otnLeft1, [h0];
 	join1:
-	    leftMemory, [[h0]];    
+	    leftMemory, []; // Empty since left side is unlinked.    
 	retract:
 	    otnLeft1, [h0]; 
 	    
@@ -57,28 +58,28 @@ Test "Join Node Modify test"
 	    leftMemory, [[h0]];
 	    rightMemory, [h1];
 	join2:
-	    leftMemory, [[h0, h1]]; 
+	    leftMemory, []; 			  // won't be populated until something gets asserted in the otnRight2 
 	modify:                           // modify:Left, should be no change
 	    otnLeft1, [h0];              
 	join1:
 	    leftMemory, [[h0]];
 	    rightMemory, [h1];
 	join2:
-	    leftMemory, [[h0, h1]];  
+	    leftMemory, [];				  // still unlinked  
 	modify:                           // modify:Right, should be no change
 	    otnRight1, [h1];     
 	join1:
 	    leftMemory, [[h0]];
 	    rightMemory, [h1];
 	join2:                         
-	    leftMemory, [[h0, h1]];     
+	    leftMemory, [];     
 	modify:                           // modify:Left, should be no change
 	    otnLeft1, [h0];             
 	join1:
 	    leftMemory, [[h0]];
 	    rightMemory, [h1];
 	join2:
-	    leftMemory, [[h0, h1]];  
+	    leftMemory, [];  
 	retract:
 	    otnLeft1, [h0];
 	    otnRight1, [h1];
@@ -93,20 +94,25 @@ Test "Join Node Modify test 2"
 	assert:
 	    otnLeft1, [h0, h1, h2];
 	    otnRight1, [h3, h4, h5];
+	    otnRight2, [h6];
 	join2:
-	    leftMemory, [[h0, h3], [h1, h3], [h2, h3],
-	                [h0, h4], [h1, h4], [h2, h4],
-	                [h0, h5], [h1, h5], [h2, h5]];
+	    leftMemory, [[h0, h3], [h1, h3],
+	    			 [h2, h3], [h0, h4], 
+	    			 [h1, h4], [h2, h4], 
+	    			 [h0, h5], [h1, h5], 
+	    			 [h2, h5]];
 	With:
 	    h0, age = 37;
 	modify:
 	    otnLeft1, [h0]; 
 	join1:
-	    leftMemory, [[h1], [h2], [h0]]; // notice that h0 moves to the end
+	    leftMemory, [[h0], [h1], [h2]]; // notice that h0 moves to the end *lgomes: Nodes are being ordered at ReteDslTestEngine level
+	    							    // is that a problem?
 	join2:    
-	    leftMemory, [[h1, h3], [h2, h3],
-	                [h1, h4], [h2, h4],
-	                [h1, h5], [h2, h5], [h0, h4], [h0, h5] ]; // notice that all child tuples as a result of the modify: are moved to the end
+	    leftMemory, [[h0, h4], [h0, h5],
+	    			[h1, h3], [h1, h4],
+	    			[h1, h5], [h2, h3],
+	                [h2, h4], [h2, h5] ]; // notice that all child tuples as a result of the modify: are moved to the end
 	With:
 	    h0, age = 38;
 	modify:

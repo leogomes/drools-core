@@ -40,11 +40,6 @@ Test "Node Index Test"
     assert:
     	otnRight2, [h6];	                   
 	join2:
-/*		    leftMemory, [[h3, h2], [h3, h1], [h3, h0],
-	                [h4, h0], [h4, h1], [h4, h0],
-	                [h5, h0], [h5, h1], [h5, h0]];
-*/	
-
 	    leftMemory, [[h0, h3], [h1, h3], [h2, h3],
 	                [h0, h4], [h1, h4], [h2, h4],
 	                [h0, h5], [h1, h5], [h2, h5]];
@@ -93,10 +88,10 @@ Test "Node Index Test"
 	    otnLeft1, [h0];  
 	join1:
 	    leftMemory, [[h2] ];
-	    leftMemory, [[h1], [h0]];         // h0 joins h1 in the 35 index bucket
+	    leftMemory, [[h0], [h1]];         // h0 joins h1 in the 35 index bucket
 	    rightMemory, [h3, h4];
 	    rightMemory, [h5];                // h5 still in it's own bucket  
 	join2:
 	    leftMemory, [[h2, h3],
 	                [h2, h4] ];            // index bucket for age == 34
-	    leftMemory, [[h1, h5], [h0, h5]];   // index bucket for age == 35                    
+	    leftMemory, [[h0, h5], [h1, h5]];   // index bucket for age == 35                    

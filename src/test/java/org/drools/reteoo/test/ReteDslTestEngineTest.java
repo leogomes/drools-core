@@ -566,9 +566,7 @@ public class ReteDslTestEngineTest extends TestCase {
         str += "    otn1,[h1, h3];\n";
         str += "    otn2,[h0, h2];\n";
         str += "join1:\n";
-        // Is memory order important? Is it inverted due to the use of update
-        // instead of regular assert?
-        str += "    leftMemory,[[h3], [h1]];\n";
+        str += "    leftMemory,[[h1], [h3]];\n";
         str += "    rightMemory,[h0, h2];\n";
         str += "retract:\n";
         str += "    otn1,[h1];\n";
@@ -618,11 +616,11 @@ public class ReteDslTestEngineTest extends TestCase {
         str += "    otn2, [h0, h2];\n";
         str += "    otn3, [h4];\n";
         str += "join1:\n";
-        str += "    leftMemory, [[h3], [h1]];\n";
+        str += "    leftMemory, [[h1], [h3]];\n";
         str += "    rightMemory, [h0, h2];\n";
         str += "join2:\n";
-        str += "    leftMemory, [[h3, h0],[h3, h2],\n";
-        str += "                 [h1, h0], [h1, h2]];\n";
+        str += "    leftMemory, [[h1, h0],[h3, h0],\n";
+        str += "                 [h1, h2],[h3, h2]];\n";
         str += "    rightMemory, [h4];\n";
         str += "retract:\n";
         str += "    otn1, [h1];\n";
@@ -734,7 +732,7 @@ public class ReteDslTestEngineTest extends TestCase {
         str += "    otn1, [h1, h3, h4];\n";
         str += "    otn2, [h0, h2];\n";
         str += "join1:\n";
-        str += "    leftMemory, [[h3], [h1]];\n"; // check leftMemory twice, as we have two index buckets
+        str += "    leftMemory, [[h1], [h3]];\n"; // check leftMemory twice, as we have two index buckets
         str += "    leftMemory, [[h4]];\n";
         str += "    rightMemory, [h0, h2];\n";
         str += "join2:\n";
@@ -746,7 +744,7 @@ public class ReteDslTestEngineTest extends TestCase {
         str += "    otn1, [h1];\n";
         str += "join1:\n";
         str += "    leftMemory, [[h3]];\n";
-        str += "    leftMemory, [[h4], [h1]];\n"; // notice it's moved to the new bucket   
+        str += "    leftMemory, [[h1], [h4]];\n"; // notice it's moved to the new bucket   
         str += "    rightMemory, [h0, h2];\n";
         str += "join2:\n";
         str += "    leftMemory, [];\n"; // still unlinked
