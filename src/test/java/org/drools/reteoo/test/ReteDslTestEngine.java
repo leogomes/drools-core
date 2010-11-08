@@ -897,7 +897,7 @@ public class ReteDslTestEngine {
             InternalFactHandle[] h2 = o2.getFactHandles();
             
             // Handles have to be compared in the inverse order.
-            for (int i = (h1.length-1); i > 0; i--) {
+            for (int i = (h1.length-1); i >= 0; i--) {
                 
                 int diff = h1[i].getId() - h2[i].getId();
             

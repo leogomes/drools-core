@@ -101,6 +101,10 @@ public class QueryTerminalNodeTest extends TestCase {
                                                               evaluator,
                                                               field );
 
+        /*FIXME: lgomes
+         * AlphaNode with a QueryOTN seems to be throwing the NPE
+         * when I call updateSink.
+         * */
         AlphaNode alphaNode = new AlphaNode( this.buildContext.getNextId(),
                                              constraint,
                                              queryObjectTypeNode,

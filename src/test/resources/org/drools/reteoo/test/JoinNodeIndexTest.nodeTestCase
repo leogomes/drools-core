@@ -40,9 +40,10 @@ Test "Node Index Test"
     assert:
     	otnRight2, [h6];	                   
 	join2:
-	    leftMemory, [[h0, h3], [h1, h3], [h2, h3],
-	                [h0, h4], [h1, h4], [h2, h4],
-	                [h0, h5], [h1, h5], [h2, h5]];
+	    leftMemory, [[h0, h3], [h0, h4], [h0, h5],
+	    			 [h1, h3], [h1, h4], [h1, h5],
+	    			 [h2, h3], [h2, h4], [h2, h5]   ];
+	    			                    
         rightMemory, [h6];	                
 	               
 	With:
@@ -54,9 +55,8 @@ Test "Node Index Test"
 	    leftMemory, [[h1]];               // h1 has now moved to it's own bucket
 	    rightMemory, [h3, h4, h5]; 
 	join2:
-	    leftMemory, [[h0, h3], [h2, h3],
-	                [h0, h4], [h2, h4],                
-	                [h0, h5], [h2, h5] ]; 
+	    leftMemory, [[h0, h3], [h0, h4], [h0, h5],
+	    			 [h2, h3], [h2, h4], [h2, h5]   ];                   
 	With:
 	    h5, age = 36;
 	modify:
@@ -67,8 +67,8 @@ Test "Node Index Test"
 	    rightMemory, [h3, h4];
 	    rightMemory, [h5];                // h5 also now in it's own bucket 
 	join2:
-	    leftMemory, [[h0, h3], [h2, h3],
-	                [h0, h4], [h2, h4] ]; 
+	    leftMemory, [[h0, h3], [h0, h4],
+	    			 [h2, h3], [h2, h4]];                   
 	With:
 	    h5, age = 35;
 	modify:
@@ -79,8 +79,12 @@ Test "Node Index Test"
 	    rightMemory, [h3, h4];
 	    rightMemory, [h5];                // h5 still in it's own bucket  
 	join2:
-	    leftMemory, [[h0, h3], [h2, h3],
-	                [h0, h4], [h2, h4] ]; // index bucket for age == 34
+	    leftMemory, [[h0, h3], [h0, h4],
+	    			 [h2, h3], [h2, h4]];                   
+	
+//	    leftMemory, [[h0, h3], [h2, h3],
+//	                [h0, h4], [h2, h4] ]; // index bucket for age == 34
+	                
 	    leftMemory, [[h1, h5] ];           // index bucket for age == 35   
 	With:
 	    h0, age = 35;

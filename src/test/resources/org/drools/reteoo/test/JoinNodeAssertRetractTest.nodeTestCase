@@ -29,7 +29,7 @@ Test "Assert/retract test"
 	assert:
 	    otnLeft1, [h0];
 	join1:
-	    leftMemory, [[h0]];
+	    leftMemory, []; 		// Unlinked
 	join2:
 	    leftMemory, [];   
 	retract:
@@ -40,7 +40,7 @@ Test "Assert/retract test"
 	assert:
 	    otnRight1, [h1];
 	join1:
-	    rightMemory, [h1];
+	    rightMemory, [h1];		// This is initially linked, so it's fine.
 	join2:
 	    leftMemory, [];    
 	retract:
@@ -53,10 +53,10 @@ Test "Assert/retract test"
 	    otnLeft1, [h0];  
 	    otnRight1, [h1];
 	join1:
-	    leftMemory, [[h0]];  
+	    leftMemory, [[h0]];		// Left side is linked due to the right assertion  
 	    rightMemory, [h1];
 	join2:
-	    leftMemory, [[h0, h1]]; 
+	    leftMemory, [];			// Left is still unlinked on Join2 
 	retract:
 	    otnLeft1, [h0]; 
 	    otnRight1, [h1];
@@ -66,6 +66,7 @@ Test "Assert/retract test"
 	 */    
 	assert:
 	    otnRight1, [h1];
+	    otnRight2, [h2];
 	    otnLeft1, [h0];
 	join1:
 	    leftMemory, [[h0]];  
@@ -74,7 +75,8 @@ Test "Assert/retract test"
 	    leftMemory, [[h0, h1]]; 
 	retract:
 	    otnLeft1, [h0]; 
-	    otnRight1, [h1];    
+	    otnRight1, [h1];
+	    otnRight2, [h2];    
 	
 	/**    
 	 * assert: two left and two right, with incremental first removal
@@ -86,8 +88,8 @@ Test "Assert/retract test"
 	    leftMemory, [[h0], [h1]];  
 	    rightMemory, [h2, h3];
 	join2:
-	    leftMemory, [[h0, h2], [h1, h2],
-	                [h0, h3], [h1, h3]];        
+	    leftMemory, [[h0, h2], [h0, h3], 
+	     			 [h1, h2], [h1, h3]];        
 	retract:
 	    otnLeft1, [h0];
 	join1:
@@ -154,12 +156,12 @@ Test "Assert/retract test"
 	    otnLeft1, [h0, h5, h2];
 	    otnRight1, [h3, h4, h1];
 	join1:
-	    leftMemory, [[h0], [h5], [h2]];
+	    leftMemory, [[h0], [h2], [h5]];
 	    rightMemory, [h3, h4, h1];      
 	join2:
-	    leftMemory, [[h0, h3], [h5, h3], [h2, h3],
-	                [h0, h4], [h5, h4], [h2, h4],
-	                [h0, h1], [h5, h1], [h2, h1]]; 
+	    leftMemory, [[h0, h1], [h0, h3], [h0, h4],
+	                [h2, h1], [h2, h3], [h2, h4],
+	                [h5, h1], [h5, h3], [h5, h4]]; 
 	    rightMemory, [];
 	retract:        
 	    otnLeft1, [h5];
@@ -167,9 +169,8 @@ Test "Assert/retract test"
 	    leftMemory, [[h0], [h2]];
 	    rightMemory, [h3, h4, h1];      
 	join2:
-	    leftMemory, [[h0, h3], [h2, h3],
-	                [h0, h4], [h2, h4],
-	                [h0, h1], [h2, h1]]; 
+	    leftMemory, [[h0, h1], [h0, h3], [h0, h4],
+	                [h2, h1], [h2, h3], [h2, h4]];
 	    rightMemory, [];
 	retract:        
 	    otnRight1, [h4];  
@@ -177,8 +178,8 @@ Test "Assert/retract test"
 	    leftMemory, [[h0], [h2]];
 	    rightMemory, [h3, h1];      
 	join2:
-	    leftMemory, [[h0, h3], [h2, h3],
-	                [h0, h1], [h2, h1]]; 
+	    leftMemory, [[h0, h1], [h0, h3],
+	                [h2, h1], [h2, h3]];
 	    rightMemory, []   ;
 	assert:
 	    otnLeft1, [h5];
@@ -187,24 +188,23 @@ Test "Assert/retract test"
 	    leftMemory, [[h0], [h2], [h5]];
 	    rightMemory, [h3, h1, h4] ;         
 	join2:
-	    leftMemory, [[h0, h3], [h2, h3],
-	                [h0, h1], [h2, h1],                
-	                [h5, h3], [h5, h1],
-	                [h0, h4], [h2, h4], [h5, h4] ];
+	    leftMemory, [[h0, h1], [h0, h3], [h0, h4],
+	                [h2, h1], [h2, h3], [h2, h4],
+	                [h5, h1], [h5, h3], [h5, h4]]; 
 	retract:        
 	    otnRight1, [h4]; 
 	join1:
 	    leftMemory, [[h0], [h2], [h5]];
 	    rightMemory, [h3, h1];          
 	join2:
-	    leftMemory, [[h0, h3], [h2, h3],
-	                [h0, h1], [h2, h1],                
-	                [h5, h3], [h5, h1] ];      
+	    leftMemory, [[h0, h1], [h0, h3],
+	                [h2, h1], [h2, h3],
+	                [h5, h1], [h5, h3]]; 
 	retract:        
 	    otnLeft1, [h5];
 	join1:
 	    leftMemory, [[h0], [h2]];
 	    rightMemory, [h3, h1];          
 	join2:
-	    leftMemory, [[h0, h3], [h2, h3],
-	                [h0, h1], [h2, h1]];                             
+	    leftMemory, [[h0, h1], [h0, h3],
+	                [h2, h1], [h2, h3]]; 
