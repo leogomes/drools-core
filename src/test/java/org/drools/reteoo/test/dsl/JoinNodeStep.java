@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.drools.common.SingleBetaConstraints;
+import org.drools.reteoo.BetaNode;
 import org.drools.reteoo.JoinNode;
 import org.drools.reteoo.LeftTupleSource;
 import org.drools.reteoo.MockObjectSource;
@@ -85,7 +86,7 @@ public class JoinNodeStep
             SingleBetaConstraints constraints = new SingleBetaConstraints( betaConstraint,
                                                                            buildContext.getRuleBase().getConfiguration() );
 
-            JoinNode joinNode = new JoinNode( buildContext.getNextId(),
+            BetaNode joinNode = new JoinNode( buildContext.getNextId(),
                                               leftTupleSource,
                                               rightObjectSource,
                                               constraints,

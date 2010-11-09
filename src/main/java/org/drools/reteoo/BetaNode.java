@@ -485,4 +485,68 @@ public abstract class BetaNode extends LeftTupleSource
         }
     }
 
+    protected boolean leftUnlinked(final PropagationContext context, 
+            final InternalWorkingMemory workingMemory, final BetaMemory memory) {
+        
+        // If left input is unlinked, don't do anything.
+        if(memory.isLeftUnlinked()) {
+            return true;
+        }
+        
+        if (memory.isRightUnlinked()) {
+            memory.linkRight();
+            // updates the right input memory before going on.
+            this.rightInput.updateSink(this, context, workingMemory);
+        }
+        
+        return false;
+    }
+    
+    protected boolean rightUnlinked(final PropagationContext context,
+            final InternalWorkingMemory workingMemory, final BetaMemory memory) {
+        
+        if (memory.isRightUnlinked()) {
+            return true;
+        }
+        
+        if (memory.isLeftUnlinked()) {
+            
+            memory.linkLeft();
+            // updates the left input memory before going on.
+            this.leftInput.updateSink(this, context, workingMemory);
+        }
+        
+        return false;
+    }
+    
+    protected void checkLeftUnlinking(final BetaMemory memory) {
+        
+        if(memory.getRightTupleMemory().size() == 0
+                // Makes sure that at least one side will always be linked
+                && !memory.isRightUnlinked()) {
+            // unlink right side.
+            memory.unlinkLeft();
+            
+            // TODO: this is a bit risky... but I would have to implement 
+            // partial updateSink() otherwise.
+            memory.getLeftTupleMemory().clear();
+                
+        }
+    }
+    
+    protected void checkRightUnlinking(final BetaMemory memory) {
+        
+        if (memory.getLeftTupleMemory().size() == 0
+                // Makes sure that at least one side will always be linked
+                && !memory.isLeftUnlinked()) {
+            
+            memory.unlinkRight();
+            // TODO: this is a bit risky... but I would have to implement 
+            // partial updateSink() otherwise.
+            memory.getRightTupleMemory().clear();
+        }
+    }
+
+
+
 }

@@ -61,18 +61,16 @@ public class JoinNode extends BetaNode {
         
         final BetaMemory memory = (BetaMemory) workingMemory.getNodeMemory( this );
 
-        // If left input is unlinked, don't do anything.
-        if(memory.isLeftUnlinked()) {
+
+        if(leftUnlinked(context,
+                        workingMemory,
+                        memory)) {
             return;
         }
-        
-        if (memory.isRightUnlinked()) {
-            memory.linkRight();
-            // updates the right input memory before going on.
-            this.rightInput.updateSink(this, context, workingMemory);
-        }
 
+        
         boolean useLeftMemory = true;
+        
         if ( this.tupleMemoryEnabled ) {
             memory.getLeftTupleMemory().add( leftTuple );
         } else {
@@ -113,15 +111,10 @@ public class JoinNode extends BetaNode {
         
         final BetaMemory memory = (BetaMemory) workingMemory.getNodeMemory( this );
         
-        if (memory.isRightUnlinked()) {
+        if (rightUnlinked(context,
+                         workingMemory,
+                         memory)) {
             return;
-        }
-        
-        if (memory.isLeftUnlinked()) {
-            
-            memory.linkLeft();
-            // updates the left input memory before going on.
-            this.leftInput.updateSink(this, context, workingMemory);
         }
         
 
@@ -165,33 +158,24 @@ public class JoinNode extends BetaNode {
         this.constraints.resetFactHandle( memory.getContext() );
     }
 
+
     public void retractRightTuple(final RightTuple rightTuple,
                                   final PropagationContext context,
                                   final InternalWorkingMemory workingMemory) {
         final BetaMemory memory = (BetaMemory) workingMemory.getNodeMemory( this );
-        behavior.retractRightTuple( memory.getBehaviorContext(),
-                                    rightTuple,
-                                    workingMemory );
         
         if (memory.isRightUnlinked()) {
             return;
         }
         
-        RightTupleMemory rightTupleMemory = memory.getRightTupleMemory();
-        rightTupleMemory.remove( rightTuple );
+        behavior.retractRightTuple( memory.getBehaviorContext(),
+                rightTuple,
+                workingMemory );
         
- 
-        if(rightTupleMemory.size() == 0
-                // Makes sure that at least one side will always be linked
-                && !memory.isRightUnlinked()) {
-            // unlink right side.
-            memory.unlinkLeft();
-            
-            // TODO: this is a bit risky... but I would have to implement 
-            // partial updateSink() otherwise.
-            memory.getLeftTupleMemory().clear();
-                
-        }
+        memory.getRightTupleMemory().remove( rightTuple );
+        
+        // Check if memory should be unlinked
+        checkLeftUnlinking(memory);
 
         if ( rightTuple.firstChild != null ) {
             this.sink.propagateRetractRightTuple( rightTuple,
@@ -199,6 +183,7 @@ public class JoinNode extends BetaNode {
                                                   workingMemory );
         }
     }
+
 
     public void retractLeftTuple(final LeftTuple leftTuple,
                                  final PropagationContext context,
@@ -210,19 +195,11 @@ public class JoinNode extends BetaNode {
             return;
         }
         
-        LeftTupleMemory leftTupleMemory = memory.getLeftTupleMemory();
-        leftTupleMemory.remove( leftTuple );
+        memory.getLeftTupleMemory().remove( leftTuple );
         
-        if (leftTupleMemory.size() == 0
-                // Makes sure that at least one side will always be linked
-                && !memory.isLeftUnlinked()) {
-            
-            memory.unlinkRight();
-            // TODO: this is a bit risky... but I would have to implement 
-            // partial updateSink() otherwise.
-            memory.getRightTupleMemory().clear();
-
-        }
+        // Check if right side should be unlinked.
+        checkRightUnlinking(memory);
+        
         
         if ( leftTuple.firstChild != null ) {
             this.sink.propagateRetractLeftTuple( leftTuple,

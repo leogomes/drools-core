@@ -14,32 +14,32 @@
  * limitations under the License.
  */
 
-package org.drools.rule;
+package org.drools.time.impl;
+
+import java.util.List;
+import org.drools.time.JobHandle;
+
 
 /**
- * A simple factory for GroupElements
+ * A JobHandle container for scheduling multiple jobs
  * 
- * @author etirelli
+ * @author salaboy
  */
-public class GroupElementFactory {
+public class MultiJobHandle
+    implements
+    JobHandle {
+    
+    private static final long serialVersionUID = 510l;
+    
+    private final List<JobHandle>     jobHandles;
 
-    private GroupElementFactory() {
+    public MultiJobHandle(List<JobHandle>   jobHandles) {
+        this.jobHandles = jobHandles;
     }
 
-    public static GroupElement newAndInstance() {
-        return new GroupElement( GroupElement.AND );
+    public Object getJobHandles() {
+        return jobHandles;
     }
 
-    public static GroupElement newOrInstance() {
-        return new GroupElement( GroupElement.OR );
-    }
-
-    public static GroupElement newNotInstance() {
-        return new GroupElement( GroupElement.NOT );
-    }
-
-    public static GroupElement newExistsInstance() {
-        return new GroupElement( GroupElement.EXISTS );
-    }
-
+    
 }

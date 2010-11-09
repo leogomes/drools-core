@@ -98,6 +98,12 @@ public class ExistsNode extends BetaNode {
                                 final PropagationContext context,
                                 final InternalWorkingMemory workingMemory) {
         final BetaMemory memory = (BetaMemory) workingMemory.getNodeMemory( this );
+        
+//        if(leftUnlinked(context,
+//                        workingMemory,
+//                        memory)) {
+//            return;
+//        }
 
         this.constraints.updateFromTuple( memory.getContext(),
                                           workingMemory,
@@ -156,12 +162,20 @@ public class ExistsNode extends BetaNode {
                              final PropagationContext context,
                              final InternalWorkingMemory workingMemory) {
 
+        final BetaMemory memory = (BetaMemory) workingMemory.getNodeMemory( this );
+        
+//        if (rightUnlinked(context,
+//                          workingMemory,
+//                          memory)) {
+//            return;
+//        }
+        
         // FIXME: lgomes - Is there a reason for it NOT to use the createRightTuple from BetaNode?
         // Is it taking into account concurrency?
         final RightTuple rightTuple = new RightTuple( factHandle,
                                                       this );
 
-        final BetaMemory memory = (BetaMemory) workingMemory.getNodeMemory( this );
+
         if ( !behavior.assertRightTuple( memory.getBehaviorContext(),
                                          rightTuple,
                                          workingMemory ) ) {
@@ -222,10 +236,19 @@ public class ExistsNode extends BetaNode {
         final RightTuple rootBlocker = (RightTuple) rightTuple.getNext();
 
         final BetaMemory memory = (BetaMemory) workingMemory.getNodeMemory( this );
+        
+//        if (memory.isRightUnlinked()) {
+//            return;
+//        }
+        
         behavior.retractRightTuple( memory.getBehaviorContext(),
                                     rightTuple,
                                     workingMemory );
+        
         memory.getRightTupleMemory().remove( rightTuple );
+        
+        // Check if left side should be unlinked;
+//        checkLeftUnlinking(memory);
 
         if ( rightTuple.getBlocked() == null ) {
             return;
@@ -284,6 +307,11 @@ public class ExistsNode extends BetaNode {
                                  final InternalWorkingMemory workingMemory) {
         RightTuple blocker = leftTuple.getBlocker();
         final BetaMemory memory = (BetaMemory) workingMemory.getNodeMemory( this );
+        
+//        if (memory.isLeftUnlinked()) {
+//            return;
+//        }
+        
         if ( blocker != null ) {
             this.sink.propagateRetractLeftTuple( leftTuple,
                                                  context,
@@ -291,7 +319,11 @@ public class ExistsNode extends BetaNode {
 
             blocker.removeBlocked( leftTuple );
         } else {
+            
             memory.getLeftTupleMemory().remove( leftTuple );
+            
+//            // Check if right side should be unlinked.
+//            checkRightUnlinking(memory);
         }
     }
 

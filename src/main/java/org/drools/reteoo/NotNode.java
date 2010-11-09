@@ -61,7 +61,14 @@ public class NotNode extends BetaNode {
     public void assertLeftTuple(final LeftTuple leftTuple,
                                 final PropagationContext context,
                                 final InternalWorkingMemory workingMemory) {
+        
         final BetaMemory memory = (BetaMemory) workingMemory.getNodeMemory( this );
+        
+//        if(leftUnlinked(context,
+//                        workingMemory,
+//                        memory)) {
+//            return;
+//        }
 
         
         boolean useLeftMemory = true;
@@ -110,10 +117,18 @@ public class NotNode extends BetaNode {
     public void assertObject(final InternalFactHandle factHandle,
                              final PropagationContext context,
                              final InternalWorkingMemory workingMemory) {
+        
+        final BetaMemory memory = (BetaMemory) workingMemory.getNodeMemory( this );
+        
+//        if(rightUnlinked(context,
+//                        workingMemory,
+//                        memory)) {
+//            return;
+//        }
+        
         final RightTuple rightTuple = createRightTuple( factHandle,
                                                         this );
 
-        final BetaMemory memory = (BetaMemory) workingMemory.getNodeMemory( this );
         if ( !behavior.assertRightTuple( memory.getBehaviorContext(),
                                          rightTuple,
                                          workingMemory ) ) {
@@ -162,14 +177,23 @@ public class NotNode extends BetaNode {
     public void retractRightTuple(final RightTuple rightTuple,
                                   final PropagationContext context,
                                   final InternalWorkingMemory workingMemory) {
+        
+        final BetaMemory memory = (BetaMemory) workingMemory.getNodeMemory( this );
+
+//        if (memory.isRightUnlinked()) {
+//            return;
+//        }
+        
         // assign now, so we can remove from memory before doing any possible propagations
         final RightTuple rootBlocker = (RightTuple) rightTuple.getNext();
 
-        final BetaMemory memory = (BetaMemory) workingMemory.getNodeMemory( this );
         behavior.retractRightTuple( memory.getBehaviorContext(),
                                     rightTuple,
                                     workingMemory );
+        
         memory.getRightTupleMemory().remove( rightTuple );
+        
+//        checkLeftUnlinking(memory);
 
         if ( rightTuple.getBlocked() == null ) {
             return;
@@ -220,10 +244,19 @@ public class NotNode extends BetaNode {
     public void retractLeftTuple(final LeftTuple leftTuple,
                                  final PropagationContext context,
                                  final InternalWorkingMemory workingMemory) {
+        
+        final BetaMemory memory = (BetaMemory) workingMemory.getNodeMemory( this );
+        
+//        if (memory.isLeftUnlinked()) {
+//            return;
+//        }
+        
         RightTuple blocker = leftTuple.getBlocker();
+        
         if ( blocker == null ) {
-            final BetaMemory memory = (BetaMemory) workingMemory.getNodeMemory( this );
+            
             memory.getLeftTupleMemory().remove( leftTuple );
+//            checkRightUnlinking(memory);
 
             this.sink.propagateRetractLeftTuple( leftTuple,
                                                  context,

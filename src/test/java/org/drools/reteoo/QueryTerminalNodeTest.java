@@ -127,7 +127,7 @@ public class QueryTerminalNodeTest extends TestCase {
                                                       ruleBase.getReteooBuilder().getIdGenerator() );
         buildContext.setTupleMemoryEnabled( false );
 
-        final JoinNode joinNode = new JoinNode( this.buildContext.getNextId(),
+        final BetaNode joinNode = new JoinNode( this.buildContext.getNextId(),
                                                 liaNode,
                                                 alphaNode,
                                                 EmptyBetaConstraints.getInstance(),

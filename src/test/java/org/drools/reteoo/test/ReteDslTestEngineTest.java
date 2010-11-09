@@ -37,7 +37,7 @@ import org.drools.common.InternalWorkingMemory;
 import org.drools.common.NodeMemory;
 import org.drools.common.PropagationContextImpl;
 import org.drools.reteoo.BetaMemory;
-import org.drools.reteoo.JoinNode;
+import org.drools.reteoo.BetaNode;
 import org.drools.reteoo.LeftInputAdapterNode;
 import org.drools.reteoo.LeftTuple;
 import org.drools.reteoo.ObjectTypeNode;
@@ -336,7 +336,7 @@ public class ReteDslTestEngineTest extends TestCase {
         NodeTestResult result = executeTest( str );
         Map<String, Object> map = result.context;
 
-        JoinNode join1 = (JoinNode) map.get( "join1" );
+        BetaNode join1 = (BetaNode) map.get( "join1" );
         ObjectTypeNode otn1 = (ObjectTypeNode) map.get( "otn1" );
         ObjectTypeNode otn2 = (ObjectTypeNode) map.get( "otn2" );
         
@@ -499,7 +499,7 @@ public class ReteDslTestEngineTest extends TestCase {
 
         InternalWorkingMemory wm = (InternalWorkingMemory) map.get( "WorkingMemory" );
 
-        JoinNode join1 = (JoinNode) map.get( "join1" );
+        BetaNode join1 = (BetaNode) map.get( "join1" );
 
         BetaMemory memory = (BetaMemory) wm.getNodeMemory( join1 );
         assertEquals( 2,
@@ -537,7 +537,7 @@ public class ReteDslTestEngineTest extends TestCase {
         InternalWorkingMemory wm = (InternalWorkingMemory) map.get( "WorkingMemory" );
         List<InternalFactHandle> handles = (List<InternalFactHandle>) map.get( "Handles" );
 
-        JoinNode join1 = (JoinNode) map.get( "join1" );
+        BetaNode join1 = (BetaNode) map.get( "join1" );
 
         BetaMemory memory = (BetaMemory) wm.getNodeMemory( join1 );
         assertEquals( 1,
@@ -581,7 +581,7 @@ public class ReteDslTestEngineTest extends TestCase {
         InternalWorkingMemory wm = (InternalWorkingMemory) map.get( "WorkingMemory" );
         List<InternalFactHandle> handles = (List<InternalFactHandle>) map.get( "Handles" );
 
-        JoinNode join1 = (JoinNode) map.get( "join1" );
+        BetaNode join1 = (BetaNode) map.get( "join1" );
 
         BetaMemory memory = (BetaMemory) wm.getNodeMemory( join1 );
         assertEquals( 1,
@@ -638,7 +638,7 @@ public class ReteDslTestEngineTest extends TestCase {
         InternalWorkingMemory wm = (InternalWorkingMemory) map.get( "WorkingMemory" );
         List<InternalFactHandle> handles = (List<InternalFactHandle>) map.get( "Handles" );
 
-        JoinNode join1 = (JoinNode) map.get( "join1" );
+        BetaNode join1 = (BetaNode) map.get( "join1" );
 
         BetaMemory memory = (BetaMemory) wm.getNodeMemory( join1 );
         assertEquals( 1,
@@ -696,7 +696,7 @@ public class ReteDslTestEngineTest extends TestCase {
         InternalWorkingMemory wm = (InternalWorkingMemory) map.get( "WorkingMemory" );
         List<InternalFactHandle> handles = (List<InternalFactHandle>) map.get( "Handles" );
 
-        JoinNode join1 = (JoinNode) map.get( "join1" );
+        BetaNode join1 = (BetaNode) map.get( "join1" );
 
         BetaMemory memory = (BetaMemory) wm.getNodeMemory( join1 );
         assertEquals( 1,
@@ -756,7 +756,7 @@ public class ReteDslTestEngineTest extends TestCase {
         InternalWorkingMemory wm = (InternalWorkingMemory) map.get( "WorkingMemory" );
         List<InternalFactHandle> handles = (List<InternalFactHandle>) map.get( "Handles" );
 
-        JoinNode join1 = (JoinNode) map.get( "join1" );
+        BetaNode join1 = (BetaNode) map.get( "join1" );
 
         BetaMemory memory = (BetaMemory) wm.getNodeMemory( join1 );
         assertEquals( 2,
@@ -765,7 +765,7 @@ public class ReteDslTestEngineTest extends TestCase {
         assertEquals( 3,
                       memory.getLeftTupleMemory().size() );  
         
-        JoinNode join2 = (JoinNode) map.get( "join2" );
+        BetaNode join2 = (BetaNode) map.get( "join2" );
 
         memory = (BetaMemory) wm.getNodeMemory( join2 );
         assertEquals( 0,

@@ -68,7 +68,7 @@ public abstract class AbstractObjectSinkAdapter implements ObjectSinkPropagator,
     protected boolean isLinked(final ObjectSink sink, 
                                final InternalWorkingMemory workingMemory) {
         
-        if(sink instanceof BetaNode) {
+        if(sink instanceof JoinNode) {
             final BetaMemory memory = (BetaMemory) workingMemory.getNodeMemory((NodeMemory) sink );
             return !memory.isRightUnlinked();
         }

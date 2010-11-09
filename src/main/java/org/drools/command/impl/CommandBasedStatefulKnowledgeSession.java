@@ -107,8 +107,6 @@ public class CommandBasedStatefulKnowledgeSession
     public CommandBasedStatefulKnowledgeSession(CommandService commandService) {
         this.commandService = commandService;
     }
-    
-    
 
     public int getId() {
         return commandService.execute( new GetIdCommand() );
@@ -459,13 +457,6 @@ public class CommandBasedStatefulKnowledgeSession
     
     public KnowledgeSessionConfiguration getSessionConfiguration() {
     	return ((KnowledgeCommandContext) commandService.getContext()).getStatefulKnowledgesession().getSessionConfiguration();
-    }
-
-
-
-    public QueryResults getQueryResults(String query) {
-        // TODO Auto-generated method stub
-        return null;
     }
 
 }

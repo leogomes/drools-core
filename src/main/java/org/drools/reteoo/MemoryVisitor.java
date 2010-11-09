@@ -130,7 +130,7 @@ public class MemoryVisitor extends ReflectiveVisitor
         this.indent--;
     }
 
-    public void visitJoinNode(final JoinNode node) {
+    public void visitJoinNode(final BetaNode node) {
         System.out.println( indent() + node );
 
         try {

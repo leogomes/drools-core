@@ -843,9 +843,4 @@ public class StatefulKnowledgeSessionImpl
 		return this.session.getLastIdleTimestamp();
 	}
 
-    public QueryResults getQueryResults(String query) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
 }
