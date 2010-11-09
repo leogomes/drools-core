@@ -113,7 +113,7 @@ public abstract class BetaNode extends LeftTupleSource
         this.behavior = new BehaviorManager( behaviors );
 
         if ( this.constraints == null ) {
-            throw new RuntimeException( "cannot have null constraints, must at least be an instance of EmptyBetaConstraints" );
+            throw new IllegalStateException( "cannot have null constraints, must at least be an instance of EmptyBetaConstraints" );
         }
     }
 

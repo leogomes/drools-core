@@ -156,6 +156,8 @@ public class ExistsNode extends BetaNode {
                              final PropagationContext context,
                              final InternalWorkingMemory workingMemory) {
 
+        // FIXME: lgomes - Is there a reason for it NOT to use the createRightTuple from BetaNode?
+        // Is it taking into account concurrency?
         final RightTuple rightTuple = new RightTuple( factHandle,
                                                       this );
 
