@@ -212,6 +212,11 @@ public class JoinNode extends BetaNode {
                                  final PropagationContext context,
                                  final InternalWorkingMemory workingMemory) {
         final BetaMemory memory = (BetaMemory) workingMemory.getNodeMemory( this );
+        
+        // Not really sure about this..
+        if (rightUnlinked(context, workingMemory, memory)) {
+            return;
+        }
 
         // WTD here
         //                if ( !behavior.assertRightTuple( memory.getBehaviorContext(),
@@ -310,7 +315,12 @@ public class JoinNode extends BetaNode {
     public void modifyLeftTuple(final LeftTuple leftTuple,
                                 final PropagationContext context,
                                 final InternalWorkingMemory workingMemory) {
+        
         final BetaMemory memory = (BetaMemory) workingMemory.getNodeMemory( this );
+        
+        if (leftUnlinked(context, workingMemory, memory)) {
+            return;
+        }
 
         // Add and remove to make sure we are in the right bucket and at the end
         // this is needed to fix for indexing and deterministic iteration

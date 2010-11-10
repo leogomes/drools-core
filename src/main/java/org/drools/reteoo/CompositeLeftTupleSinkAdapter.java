@@ -72,16 +72,20 @@ public class CompositeLeftTupleSinkAdapter extends AbstractLeftTupleSinkAdapter 
                                          final boolean leftTupleMemoryEnabled) {
 
         for ( LeftTupleSinkNode sink = this.sinks.getFirst(); sink != null; sink = sink.getNextLeftTupleSinkNode() ) {
-            LeftTuple newLeftTuple = new LeftTuple( leftTuple,
-                                                    rightTuple,
-                                                    currentLeftChild,
-                                                    currentRightChild,
-                                                    sink,
-                                                    leftTupleMemoryEnabled );
-            doPropagateAssertLeftTuple( context,
-                                        workingMemory,
-                                        sink,
-                                        newLeftTuple );
+            
+            if (shouldPropagate(sink, workingMemory)) {
+
+                LeftTuple newLeftTuple = new LeftTuple( leftTuple,
+                                                        rightTuple,
+                                                        currentLeftChild,
+                                                        currentRightChild,
+                                                        sink,
+                                                        leftTupleMemoryEnabled );
+                doPropagateAssertLeftTuple( context,
+                                            workingMemory,
+                                            sink,
+                                            newLeftTuple );
+            }
         }
     }
 
@@ -90,12 +94,15 @@ public class CompositeLeftTupleSinkAdapter extends AbstractLeftTupleSinkAdapter 
                                          final InternalWorkingMemory workingMemory,
                                          final boolean leftTupleMemoryEnabled) {
         for ( LeftTupleSinkNode sink = this.sinks.getFirst(); sink != null; sink = sink.getNextLeftTupleSinkNode() ) {
-            doPropagateAssertLeftTuple( context,
-                                        workingMemory,
-                                        sink,
-                                        new LeftTuple( tuple,
-                                                       sink,
-                                                       leftTupleMemoryEnabled ) );
+
+            if (shouldPropagate(sink, workingMemory)) {
+                doPropagateAssertLeftTuple( context,
+                                            workingMemory,
+                                            sink,
+                                            new LeftTuple( tuple,
+                                                           sink,
+                                                           leftTupleMemoryEnabled ) );
+            }
         }
     }
 
