@@ -49,6 +49,8 @@ public class TypeDeclaration
     public static final String ATTR_TIMESTAMP           = "timestamp";
     public static final String ATTR_EXPIRE              = "expires";
     public static final String ATTR_PROP_CHANGE_SUPPORT = "propertyChangeSupport";
+    // FIXME Update!!
+	public static final String ATTR_FIELD_POSITION = "toto";
 
     public static enum Role {
         FACT, EVENT;

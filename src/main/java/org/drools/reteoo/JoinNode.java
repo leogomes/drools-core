@@ -20,6 +20,7 @@ import org.drools.base.DroolsQuery;
 import org.drools.common.BetaConstraints;
 import org.drools.common.InternalFactHandle;
 import org.drools.common.InternalWorkingMemory;
+import org.drools.common.NodeMemory;
 import org.drools.core.util.Iterator;
 import org.drools.reteoo.builder.BuildContext;
 import org.drools.rule.Behavior;
@@ -421,8 +422,11 @@ public class JoinNode extends BetaNode {
                                               leftTuple );
             for ( RightTuple rightTuple = memory.getRightTupleMemory().getFirst( leftTuple,
                                                                                  (InternalFactHandle) context.getFactHandle() ); rightTuple != null; rightTuple = (RightTuple) rightTuple.getNext() ) {
-                if ( this.constraints.isAllowedCachedLeft( memory.getContext(),
+            	
+                if (shouldLeftPropagate(workingMemory) && 
+                		this.constraints.isAllowedCachedLeft( memory.getContext(),
                                                            rightTuple.getFactHandle() ) ) {
+                	
                     sink.assertLeftTuple( new LeftTuple( leftTuple,
                                                          rightTuple,
                                                          null,
@@ -436,6 +440,12 @@ public class JoinNode extends BetaNode {
 
             this.constraints.resetTuple( memory.getContext() );
         }
+    }
+    
+    /** LGomes: Review where this method should be put.. */
+    public boolean shouldLeftPropagate(InternalWorkingMemory workingMemory) {
+    	BetaMemory memory = (BetaMemory) workingMemory.getNodeMemory((NodeMemory) this );
+        return !memory.isLeftUnlinked();                
     }
 
     public short getType() {

@@ -139,17 +139,17 @@ public class AlphaNode extends ObjectSource
                              final InternalWorkingMemory workingMemory) {
         
         if (this.sink.shouldPropagate(workingMemory)) {
-            
+        	
             final AlphaMemory memory = (AlphaMemory) workingMemory.getNodeMemory( this );
+            
             if ( this.constraint.isAllowed( factHandle,
                                             workingMemory,
                                             memory.context ) ) {
-    
-                this.sink.propagateAssertObject( factHandle,
-                                                 context,
-                                                 workingMemory );
+            	
+            	this.sink.propagateAssertObject( factHandle,
+	                                             context,
+	                                             workingMemory );
             }
-            
         }
     }
 
