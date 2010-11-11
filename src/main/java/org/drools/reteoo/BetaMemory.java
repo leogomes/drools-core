@@ -33,6 +33,7 @@ public class BetaMemory implements Externalizable, Unlinkable {
     private ObjectHashMap createdHandles;
     private ContextEntry[] context;
     private Object behaviorContext;
+    
     /* Let's start with only left unlinked. */
     private boolean isLeftUnlinked = true;
     private boolean isRightUnlinked = false;
@@ -64,8 +65,8 @@ public class BetaMemory implements Externalizable, Unlinkable {
         out.writeObject( createdHandles );
         out.writeObject( context );
         out.writeObject( behaviorContext );
-        out.writeObject( isLeftUnlinked );
-        out.writeObject( isRightUnlinked );
+        out.writeBoolean( isLeftUnlinked );
+        out.writeBoolean( isRightUnlinked );
     }
 
     public RightTupleMemory getRightTupleMemory() {
