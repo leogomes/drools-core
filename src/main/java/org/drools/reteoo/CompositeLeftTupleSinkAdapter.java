@@ -366,4 +366,10 @@ public class CompositeLeftTupleSinkAdapter extends AbstractLeftTupleSinkAdapter 
         return childLeftTuple;
     }
 
+    public boolean shouldPropagate(InternalWorkingMemory workingMemory) {
+        return true;
+    }
+    
+    
+
 }

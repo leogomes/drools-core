@@ -666,7 +666,9 @@ public class AccumulateNode extends BetaNode {
                                                 context,
                                                 workingMemory,
                                                 useLeftMemory );
-            accctx.propagated = true;
+            
+            accctx.propagated = this.sink.shouldPropagate(workingMemory);
+            
             // restore the matchings list
             restoreList( leftTuple,
                          matchings );

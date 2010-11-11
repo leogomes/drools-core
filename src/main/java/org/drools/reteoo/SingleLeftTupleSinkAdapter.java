@@ -301,4 +301,10 @@ public class SingleLeftTupleSinkAdapter extends AbstractLeftTupleSinkAdapter {
         childLeftTuple.unlinkFromLeftParent();
         return temp;
     }
+
+    public boolean shouldPropagate(InternalWorkingMemory workingMemory) {
+        return shouldPropagate(this.sink, workingMemory);
+    }
+    
+    
 }

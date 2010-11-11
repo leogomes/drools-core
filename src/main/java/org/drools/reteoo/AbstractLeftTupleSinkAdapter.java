@@ -71,7 +71,7 @@ public abstract class AbstractLeftTupleSinkAdapter
      * @param workingMemory
      * @return true if the tuple should be propagated.
      */
-    protected boolean shouldPropagate(final LeftTupleSink sink, 
+    public boolean shouldPropagate(final LeftTupleSink sink, 
                                       final InternalWorkingMemory workingMemory) {
         
         if (sink instanceof JoinNode) {

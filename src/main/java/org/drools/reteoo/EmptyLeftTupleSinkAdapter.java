@@ -153,4 +153,10 @@ public class EmptyLeftTupleSinkAdapter extends AbstractLeftTupleSinkAdapter {
         
     }
 
+    public boolean shouldPropagate(InternalWorkingMemory workingMemory) {
+        return true;
+    }
+    
+    
+
 }

@@ -122,5 +122,11 @@ public interface LeftTupleSinkPropagator
                                                     LeftTuple parentLeftTuple,
                                                     PropagationContext context,
                                                     InternalWorkingMemory workingMemory);
+    
+    /** 
+     * Whether or not this tuple should be propagated,
+     * based on the linking status of the sink.
+     */
+    public boolean shouldPropagate(InternalWorkingMemory workingMemory);
 
 }
