@@ -127,6 +127,6 @@ public interface LeftTupleSinkPropagator
      * Whether or not this tuple should be propagated,
      * based on the linking status of the sink.
      */
-    public boolean shouldPropagate(InternalWorkingMemory workingMemory);
+    public int countLinkedSinks(InternalWorkingMemory workingMemory);
 
 }

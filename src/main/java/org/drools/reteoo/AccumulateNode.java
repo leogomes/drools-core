@@ -328,7 +328,8 @@ public class AccumulateNode extends BetaNode {
                                           leftTuple );
         LeftTuple childLeftTuple = getFirstMatch( leftTuple,
                                                   accctx,
-                                                  false );
+                                                  false,
+                                                  workingMemory);
 
         RightTupleMemory rightMemory = memory.betaMemory.getRightTupleMemory();
 
@@ -625,10 +626,16 @@ public class AccumulateNode extends BetaNode {
 
         if ( accctx.propagated == true ) {
             // temporarily break the linked list to avoid wrong interactions
+        	// only the results are left as children of the left tuple 
             LeftTuple[] matchings = splitList( leftTuple,
                                                accctx,
-                                               false );
-            if ( isAllowed ) {
+                                               false,
+                                               workingMemory);
+            
+        	// Only if is allowed and there was really a result
+        	// propagated before. Due to unlinked sinks, maybe nothing was 
+        	// propagated and there's no child.
+            if ( isAllowed && leftTuple.firstChild != null) {
                 // modify 
                 if ( ActivitySource.LEFT.equals( source ) ) {
                     this.sink.propagateModifyChildLeftTuple( leftTuple.firstChild,
@@ -643,6 +650,7 @@ public class AccumulateNode extends BetaNode {
                                                              workingMemory,
                                                              useLeftMemory );
                 }
+                
             } else {
                 // retract
                 this.sink.propagateRetractLeftTuple( leftTuple,
@@ -657,7 +665,8 @@ public class AccumulateNode extends BetaNode {
             // temporarily break the linked list to avoid wrong interactions
             LeftTuple[] matchings = splitList( leftTuple,
                                                accctx,
-                                               false );
+                                               false,
+                                               workingMemory);
             // assert
             this.sink.propagateAssertLeftTuple( leftTuple,
                                                 accctx.result,
@@ -667,7 +676,8 @@ public class AccumulateNode extends BetaNode {
                                                 workingMemory,
                                                 useLeftMemory );
             
-            accctx.propagated = this.sink.shouldPropagate(workingMemory);
+            //(this.sink.countLinkedSinks(workingMemory)> 0);
+            accctx.propagated = true;
             
             // restore the matchings list
             restoreList( leftTuple,
@@ -688,7 +698,9 @@ public class AccumulateNode extends BetaNode {
                 // temporarily break the linked list to avoid wrong interactions
                 LeftTuple[] matchings = splitList( leftTuple,
                                                    accctx,
-                                                   true );
+                                                   true,
+                                                   workingMemory);
+                
                 sink.assertLeftTuple( new LeftTuple( leftTuple,
                                                      accctx.result,
                                                      null,
@@ -851,9 +863,11 @@ public class AccumulateNode extends BetaNode {
                               accctx.context,
                               leftTuple,
                               workingMemory );
+        
         for ( LeftTuple childMatch = getFirstMatch( leftTuple,
                                                     accctx,
-                                                    false ); childMatch != null; childMatch = childMatch.getLeftParentNext() ) {
+                                                    false,
+                                                    workingMemory); childMatch != null; childMatch = childMatch.getLeftParentNext() ) {
             InternalFactHandle childHandle = childMatch.getRightParent().getFactHandle();
             LeftTuple tuple = leftTuple;
             if ( this.unwrapRightObject ) {
@@ -875,7 +889,8 @@ public class AccumulateNode extends BetaNode {
         // so we just split the list keeping the head 
         LeftTuple[] matchings = splitList( leftTuple,
                                            accctx,
-                                           false );
+                                           false,
+                                           workingMemory);
         for ( LeftTuple match = matchings[0]; match != null; match = match.getLeftParentNext() ) {
             // can't unlink from the left parent as it was already unlinked during the splitList call above
             match.unlinkFromRightParent();
@@ -915,13 +930,16 @@ public class AccumulateNode extends BetaNode {
 
     protected LeftTuple[] splitList(final LeftTuple parent,
                                     final AccumulateContext accctx,
-                                    final boolean isUpdatingSink) {
+                                    final boolean isUpdatingSink,
+                                    final InternalWorkingMemory workingMemory) {
+    	
         LeftTuple[] matchings = new LeftTuple[2];
 
         // save the matchings list
         matchings[0] = getFirstMatch( parent,
                                       accctx,
-                                      isUpdatingSink );
+                                      isUpdatingSink,
+                                      workingMemory);
         matchings[1] = matchings[0] != null ? parent.lastChild : null;
 
         // update the tuple for the actual propagations
@@ -962,14 +980,16 @@ public class AccumulateNode extends BetaNode {
      */
     private LeftTuple getFirstMatch(final LeftTuple leftTuple,
                                     final AccumulateContext accctx,
-                                    final boolean isUpdatingSink) {
+                                    final boolean isUpdatingSink,
+                                    final InternalWorkingMemory workingMemory) {
         // unlink all right matches 
         LeftTuple child = leftTuple.firstChild;
 
         if ( accctx.propagated ) {
             // To do that, we need to skip the first N children that are in fact
             // the propagated tuples
-            int target = isUpdatingSink ? this.sink.size() - 1 : this.sink.size();
+        	int linkedSinks = this.sink.countLinkedSinks(workingMemory);
+            int target = isUpdatingSink ? linkedSinks - 1 : linkedSinks;
             for ( int i = 0; i < target; i++ ) {
                 child = child.getLeftParentNext();
             }

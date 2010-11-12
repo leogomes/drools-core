@@ -153,9 +153,10 @@ public class EmptyLeftTupleSinkAdapter extends AbstractLeftTupleSinkAdapter {
         
     }
 
-    public boolean shouldPropagate(InternalWorkingMemory workingMemory) {
-        return true;
-    }
+	public int countLinkedSinks(InternalWorkingMemory workingMemory) {
+		return 0;
+	}
+
     
     
 

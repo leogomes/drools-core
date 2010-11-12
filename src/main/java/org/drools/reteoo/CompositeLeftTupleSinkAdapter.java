@@ -366,9 +366,19 @@ public class CompositeLeftTupleSinkAdapter extends AbstractLeftTupleSinkAdapter 
         return childLeftTuple;
     }
 
-    public boolean shouldPropagate(InternalWorkingMemory workingMemory) {
-        return true;
-    }
+	public int countLinkedSinks(InternalWorkingMemory workingMemory) {
+		
+		int linked = 0;
+		
+        for ( LeftTupleSinkNode sink = this.sinks.getFirst(); sink != null; sink = sink.getNextLeftTupleSinkNode() ) {
+        	if (shouldPropagate(sink, workingMemory)){
+        		linked++;
+        	}
+        }
+        return linked;
+	}
+
+    
     
     
 

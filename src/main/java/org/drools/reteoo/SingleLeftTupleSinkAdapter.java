@@ -302,9 +302,13 @@ public class SingleLeftTupleSinkAdapter extends AbstractLeftTupleSinkAdapter {
         return temp;
     }
 
-    public boolean shouldPropagate(InternalWorkingMemory workingMemory) {
-        return shouldPropagate(this.sink, workingMemory);
-    }
+	public int countLinkedSinks(InternalWorkingMemory workingMemory) {
+		
+		return (shouldPropagate(this.sink, workingMemory) == true 
+				? 1 : 0);
+	}
+
+    
     
     
 }

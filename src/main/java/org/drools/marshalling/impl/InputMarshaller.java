@@ -580,10 +580,11 @@ public class InputMarshaller {
                                                                    sink );
                             RightTuple rightTuple = context.rightTuples.get( key );
                             // just wiring up the match record
-                            new LeftTuple( parentLeftTuple,
-                                           rightTuple,
-                                           sink,
-                                           true );
+	                        new LeftTuple( parentLeftTuple,
+	                                       rightTuple,
+	                                       sink,
+	                                       true );
+
                             break;
                         }
                         case PersisterEnums.LEFT_TUPLE : {
