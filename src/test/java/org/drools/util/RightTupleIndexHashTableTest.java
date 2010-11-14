@@ -43,6 +43,7 @@ import org.drools.rule.Pattern;
 import org.drools.spi.InternalReadAccessor;
 
 public class RightTupleIndexHashTableTest extends TestCase {
+    
     EqualityEvaluatorsDefinition equals = new EqualityEvaluatorsDefinition();
 
     ClassFieldAccessorStore      store  = new ClassFieldAccessorStore();

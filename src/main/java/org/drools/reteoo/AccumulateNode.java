@@ -994,7 +994,7 @@ public class AccumulateNode extends BetaNode {
                 child = child.getLeftParentNext();
             }
         }
-        return child;
+        return child; 
     }
 
     public static class AccumulateMemory

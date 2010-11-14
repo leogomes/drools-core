@@ -30,7 +30,7 @@ Test "Exists node assert/retract test"
 	assert:
 	    otnLeft1, [h0];
 	exists1:
-	    leftMemory, []; // Nothing due to left side unlinked.
+	    leftMemory, [[h0]];
 	join2:
 	    leftMemory, [];        
 	retract:
@@ -49,6 +49,7 @@ Test "Exists node assert/retract test"
 	    rightMemory, [h1];
 	join2:
 	    leftMemory, [];        
+	    rightMemory, [h1];
 	retract:
 	    otnRight1, [h1]; 
 	exists1:
@@ -60,7 +61,7 @@ Test "Exists node assert/retract test"
 	assert:
 	    otnLeft1, [h0];  
 	exists1:
-	    leftMemory, []; // unlinked.  
+	    leftMemory, [[h0]];   
 	    rightMemory, [];  
 	join2:
 	    leftMemory, []; 
@@ -100,7 +101,7 @@ Test "Exists node assert/retract test"
 	    leftMemory, []; // although it's inserted, you can't see it in the memory as h5 blocks it
 	    rightMemory, [h5];         
 	join2:
-	    leftMemory, [[h0]]; 
+	    leftMemory, []; 
 	retract:
 	    otnRight1, [h5];
 	exists1:
@@ -133,9 +134,10 @@ Test "Exists node assert/retract test"
 	    leftMemory, [];            //h0 and h1 are blocked, by h5, so removed  
 	    rightMemory, [h5, h6];  
 	join2:
-	    leftMemory, [[h0], [h1]];       
+	    leftMemory, [];           // left unlinked       
 	assert:
-	    otnRight1, [h6];    
+	    otnRight1, [h6];
+	    otnRight2, [h7];          // asserting something in the right to link left
 	exists1:
 	    leftMemory, [];            //h0 and h1 are still blocked
 	    rightMemory, [h5, h6];  

@@ -22,7 +22,7 @@ Setup
 	    new org.drools.Person('yoda', 37), new org.drools.Person('luke', 38),
 	    new org.drools.Person('dave', 33), new org.drools.Person('bob', 32);
 
-Test "LeftUnlinking.nodeTestCase"	    
+Test "LeftUnlinking"	    
 	/**
 	 * check single left assertion and no memory population
 	 */
@@ -34,7 +34,7 @@ Test "LeftUnlinking.nodeTestCase"
 	    leftMemory, []; 
 	      
 	/**    
-	 * check single right assertion and retraction
+	 * check double right assertion and retraction
 	 */
 	assert:
 	    otnRight1, [h1];
@@ -88,6 +88,16 @@ Test "LeftUnlinking.nodeTestCase"
     	rightMemory, [h1];
     join2:
     	leftMemory, [[h5, h1]];
-    	rightMemory, [h2];        
-    	        
-             
+    	rightMemory, [h2];
+    	
+	// retracting h1
+
+	retract:
+		otnRight2, [h1];
+	join1:
+		rightMemory, []; 	// retracted
+		leftMemory, [];		// unlinked, since there's nothing to match with
+	join2:
+		leftMemory, [];		// retracted
+		rightMemory, [];	// unlinked, since there is nothing else to match on the other side
+

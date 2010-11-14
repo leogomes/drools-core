@@ -21,7 +21,8 @@ Setup
 	    new org.drools.Person('darth', 35), new org.drools.Person('bobba', 35),
 	    new org.drools.Person('yoda', 35), new org.drools.Person('luke', 35),
 	    new org.drools.Person('dave', 35), new org.drools.Person('bob', 36),
-	    new org.drools.Person('obi', 36), new org.drools.Person('han', 37);       
+	    new org.drools.Person('obi', 36), new org.drools.Person('han', 37),
+	    new org.drools.Person('dude', 39);      
 	
 Test "Not node modify test"    
 	/**        
@@ -30,7 +31,7 @@ Test "Not node modify test"
 	assert:
 	    otnLeft1, [h0];  
 	not1:
-	    leftMemory, [];  
+	    leftMemory, [[h0]];  
 	    rightMemory, [];  
 	join2:
 	    leftMemory, [];
@@ -41,7 +42,7 @@ Test "Not node modify test"
 	    leftMemory, [[h0]]; 
 	    rightMemory, [h1]; 
 	join2:
-	    leftMemory, [[h0]];   
+	    leftMemory, [];       // unlinked   
 	With:
 	    h1, age = 36;
 	modify:
@@ -59,7 +60,7 @@ Test "Not node modify test"
 	    leftMemory, [[h0]]; // h0 is back again, as it's no longer blocked
 	    rightMemory, [h1]; 
 	join2:
-	    leftMemory, [[h0]]; 
+	    leftMemory, []; 
 	retract:
 	    otnLeft1, [h0]; 
 	    otnRight1, [h1];         
@@ -92,6 +93,8 @@ Test "Not node modify test"
 	    otnRight1, [h7]; // h0 and h1 should now be unblocked
 	not1:
 	    leftMemory, [[h0], [h1]];      // h0 and h1 appear back in memory
+	assert:
+		otnRight2, [h8];
 	join2:
 	    leftMemory, [[h0], [h1]];  
 	With:

@@ -21,7 +21,8 @@ Setup
 	    new org.drools.Person('darth', 35), new org.drools.Person('bobba', 35),
 	    new org.drools.Person('yoda', 35), new org.drools.Person('luke', 35),
 	    new org.drools.Person('dave', 35), new org.drools.Person('bob', 36),
-	    new org.drools.Person('obi', 36), new org.drools.Person('han', 37);       
+	    new org.drools.Person('obi', 36), new org.drools.Person('han', 37),
+	    new org.drools.Person('dude', 38);
 
 Test "assert retract test"	    
 	/**
@@ -32,7 +33,7 @@ Test "assert retract test"
 	not1:
 	    leftMemory, [[h0]];
 	join2:
-	    leftMemory, [[h0]];        
+	    leftMemory, [];			// left side is unlinked.        
 	retract:
 	    otnLeft1, [h0];   
 	not1:
@@ -63,14 +64,16 @@ Test "assert retract test"
 	    leftMemory, [[h0]];  
 	    rightMemory, [];  
 	join2:
-	    leftMemory, [[h0]]; 
+	    leftMemory, [];				// not propagated as the left side is unlinked. 
 	assert:
 	    otnRight1, [h1];
+	    otnRight2, [h8];
 	not1:
 	    leftMemory, [[h0]]; 
 	    rightMemory, [h1]; 
 	join2:
 	    leftMemory, [[h0]];         
+	    rightMemory, [h8];
 	retract:
 	    otnRight1, [h1];
 	    otnRight1, [];    

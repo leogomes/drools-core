@@ -21,7 +21,8 @@ Setup
 	    new org.drools.Person('darth', 35), new org.drools.Person('bobba', 35),
 	    new org.drools.Person('yoda', 35), new org.drools.Person('luke', 35),
 	    new org.drools.Person('dave', 35), new org.drools.Person('bob', 36),
-	    new org.drools.Person('obi', 36), new org.drools.Person('han', 37);  
+	    new org.drools.Person('obi', 36), new org.drools.Person('han', 37),
+	    new org.drools.Person('paul', 38);  
 	    
 Test "Exists node index test"	    
 	/**        
@@ -49,7 +50,7 @@ Test "Exists node index test"
 	    leftMemory, [];     // h0 is removed from here, as it's blocked
 	    rightMemory, [h6];
 	join2:
-	    leftMemory, [[h0]];    
+	    leftMemory, [];     // left unlinked    
 	With:
 	    h6, age = 36;
 	modify:
@@ -86,11 +87,13 @@ Test "Exists node index test"
 	not1:
 	    leftMemory, [];     
 	join2:
-	    leftMemory, [[h0], [h1]];     
+	    leftMemory, [];  // nothing here as the left side is unlinked     
 	modify:
 	    otnRight1, [h7]; // now h6 and h7 block, although due to lazy only h6 blocks at the moment
 	not1:
-	    leftMemory, [];     
+	    leftMemory, [];   
+	assert:
+		otnRight2, [h8]; // asserting to link left  
 	join2:
 	    leftMemory, [[h0], [h1]];
 	With:

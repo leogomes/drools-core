@@ -215,7 +215,10 @@ public class JoinNode extends BetaNode {
         final BetaMemory memory = (BetaMemory) workingMemory.getNodeMemory( this );
         
         // Not really sure about this..
-        if (rightUnlinked(context, workingMemory, memory)) {
+//        if (rightUnlinked(context, workingMemory, memory)) {
+//            return;
+//        }
+        if (memory.isRightUnlinked()) {
             return;
         }
 
@@ -319,7 +322,10 @@ public class JoinNode extends BetaNode {
         
         final BetaMemory memory = (BetaMemory) workingMemory.getNodeMemory( this );
         
-        if (leftUnlinked(context, workingMemory, memory)) {
+//        if (leftUnlinked(context, workingMemory, memory)) {
+//            return;
+//        }
+        if (memory.isLeftUnlinked()) {
             return;
         }
 
@@ -423,8 +429,7 @@ public class JoinNode extends BetaNode {
             for ( RightTuple rightTuple = memory.getRightTupleMemory().getFirst( leftTuple,
                                                                                  (InternalFactHandle) context.getFactHandle() ); rightTuple != null; rightTuple = (RightTuple) rightTuple.getNext() ) {
             	
-                if (shouldLeftPropagate(workingMemory) && 
-                		this.constraints.isAllowedCachedLeft( memory.getContext(),
+                if (this.constraints.isAllowedCachedLeft( memory.getContext(),
                                                            rightTuple.getFactHandle() ) ) {
                 	
                     sink.assertLeftTuple( new LeftTuple( leftTuple,
@@ -460,4 +465,33 @@ public class JoinNode extends BetaNode {
 
         return "[JoinNode(" + this.getId() + ") - " + ((ObjectTypeNode) source).getObjectType() + "]";
     }
+
+    @Override
+    public void modifyLeftTuple(InternalFactHandle factHandle,
+            ModifyPreviousTuples modifyPreviousTuples,
+            PropagationContext context, InternalWorkingMemory workingMemory) {
+
+        BetaMemory memory = (BetaMemory) workingMemory.getNodeMemory(this);
+        
+        if (memory.isLeftUnlinked())
+            return;
+        
+        super.modifyLeftTuple(factHandle, modifyPreviousTuples, context, workingMemory);
+    }
+
+    @Override
+    public void modifyObject(InternalFactHandle factHandle,
+            ModifyPreviousTuples modifyPreviousTuples,
+            PropagationContext context, InternalWorkingMemory workingMemory) {
+        
+
+        BetaMemory memory = (BetaMemory) workingMemory.getNodeMemory(this);
+        
+        if (memory.isRightUnlinked())
+            return;
+        
+        super.modifyObject(factHandle, modifyPreviousTuples, context, workingMemory);
+    }
+    
+    
 }

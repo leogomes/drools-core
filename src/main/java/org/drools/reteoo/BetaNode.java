@@ -309,6 +309,7 @@ public abstract class BetaNode extends LeftTupleSource
                              ModifyPreviousTuples modifyPreviousTuples,
                              PropagationContext context,
                              InternalWorkingMemory workingMemory) {
+        
         RightTuple rightTuple = modifyPreviousTuples.removeRightTuple( this );
         if ( rightTuple != null ) {
             rightTuple.reAdd();
@@ -328,6 +329,7 @@ public abstract class BetaNode extends LeftTupleSource
                                 ModifyPreviousTuples modifyPreviousTuples,
                                 PropagationContext context,
                                 InternalWorkingMemory workingMemory) {
+        
         LeftTuple leftTuple = modifyPreviousTuples.removeLeftTuple( this );
         if ( leftTuple != null ) {
             leftTuple.reAdd(); //

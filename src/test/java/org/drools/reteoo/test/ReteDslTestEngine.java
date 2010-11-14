@@ -383,8 +383,8 @@ public class ReteDslTestEngine {
                     if (expectedFactHandles.size() != actualRightTuples.size()) {
                         throw new AssertionFailedError("line " + step.getLine()
                                 + ": right Memory expected "
-                                + expectedFactHandles + " actually "
-                                + actualRightTuples);
+                                + print(expectedFactHandles) + " actually "
+                                + print(actualRightTuples));
                     }
 
                     for (int i = 0, length = actualRightTuples.size(); i < length; i++) {
@@ -392,9 +392,10 @@ public class ReteDslTestEngine {
                                 .get(i).getFactHandle()) {
                             throw new AssertionFailedError("line "
                                     + step.getLine()
-                                    + ": right Memory expected "
-                                    + expectedFactHandles + " actually "
-                                    + actualRightTuples);
+                                    + ": right Memory expected ["
+                                    + print(expectedFactHandles) + "] actually ["
+                                    + print(actualRightTuples)
+                                    + "]");
                         }
                     }
 
@@ -450,6 +451,9 @@ public class ReteDslTestEngine {
                     b.append("]");
                 } else if (tuple instanceof InternalFactHandle){
                     InternalFactHandle h = (InternalFactHandle) tuple;
+                    b.append("h").append(h.getId()-1);
+                } else if (tuple instanceof RightTuple){
+                    InternalFactHandle h = (InternalFactHandle) ((RightTuple) tuple).getFactHandle();
                     b.append("h").append(h.getId()-1);
                 }
                 
