@@ -214,18 +214,21 @@ public abstract class BetaNode extends LeftTupleSource
                                                                                       null );
             // Right is linked in the beginning, so new node will be able to 
             // have their tuples propagated without problems.
+            if (!(this instanceof JoinNode)) {
+            
             this.rightInput.updateSink( this,
                                         propagationContext,
                                         workingMemory );
+            }
             
             // lgomes: temporary hack.
-            if (!(this instanceof JoinNode)) {
+            //if (!(this instanceof JoinNode)) {
                 // At this point, if there were right tuples propagated, left will be linked
                 // and update sink will already have been called
                 this.leftInput.updateSink( this,
                                            propagationContext,
                                            workingMemory );
-            }
+            //}
         }
 
     }

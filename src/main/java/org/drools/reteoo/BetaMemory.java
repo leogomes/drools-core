@@ -35,8 +35,8 @@ public class BetaMemory implements Externalizable, Unlinkable {
     private Object behaviorContext;
     
     /* Let's start with only left unlinked. */
-    private boolean isLeftUnlinked = true;
-    private boolean isRightUnlinked = false;
+    private boolean isLeftUnlinked = false;
+    private boolean isRightUnlinked = true;
 
     public BetaMemory() {
     }

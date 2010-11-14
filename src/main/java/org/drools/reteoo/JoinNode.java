@@ -176,7 +176,7 @@ public class JoinNode extends BetaNode {
         memory.getRightTupleMemory().remove( rightTuple );
         
         // Check if memory should be unlinked
-        checkLeftUnlinking(memory);
+        //checkLeftUnlinking(memory);
 
         if ( rightTuple.firstChild != null ) {
             this.sink.propagateRetractRightTuple( rightTuple,
@@ -199,7 +199,7 @@ public class JoinNode extends BetaNode {
         memory.getLeftTupleMemory().remove( leftTuple );
         
         // Check if right side should be unlinked.
-        checkRightUnlinking(memory);
+        //checkRightUnlinking(memory);
         
         
         if ( leftTuple.firstChild != null ) {
