@@ -57,7 +57,7 @@ public class AlphaNode extends ObjectSource
 
     private ObjectSinkNode           previousRightTupleSinkNode;
     private ObjectSinkNode           nextRightTupleSinkNode;
-
+    
     public AlphaNode() {
 
     }
@@ -138,19 +138,18 @@ public class AlphaNode extends ObjectSource
                              final PropagationContext context,
                              final InternalWorkingMemory workingMemory) {
         
-        if (this.sink.shouldPropagate(workingMemory)) {
+//        if (this.sink.shouldPropagate(workingMemory)) {
         	
             final AlphaMemory memory = (AlphaMemory) workingMemory.getNodeMemory( this );
             
             if ( this.constraint.isAllowed( factHandle,
                                             workingMemory,
                                             memory.context ) ) {
-            	
             	this.sink.propagateAssertObject( factHandle,
 	                                             context,
 	                                             workingMemory );
             }
-        }
+//        }
     }
 
     public void modifyObject(final InternalFactHandle factHandle,
@@ -172,6 +171,7 @@ public class AlphaNode extends ObjectSource
     public void updateSink(final ObjectSink sink,
                            final PropagationContext context,
                            final InternalWorkingMemory workingMemory) {
+        
         final AlphaMemory memory = (AlphaMemory) workingMemory.getNodeMemory( this );
 
         // get the objects from the parent

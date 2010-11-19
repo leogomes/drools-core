@@ -73,13 +73,13 @@ public abstract class AbstractLeftTupleSinkAdapter
      */
     public boolean shouldPropagate(final LeftTupleSink sink, 
                                       final InternalWorkingMemory workingMemory) {
-        
-        if (sink instanceof JoinNode) {
-            BetaMemory memory = (BetaMemory) workingMemory.getNodeMemory((NodeMemory) sink );
-            return !memory.isLeftUnlinked();                
-        }
-        
         return true;
+//        if (sink instanceof JoinNode) {
+//            BetaMemory memory = (BetaMemory) workingMemory.getNodeMemory((NodeMemory) sink );
+//            return !memory.isLeftUnlinked();                
+//        }
+//        
+//        return true;
 
     }
 

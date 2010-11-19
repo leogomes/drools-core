@@ -115,6 +115,7 @@ public class JoinNode extends BetaNode {
         if (rightUnlinked(context,
                          workingMemory,
                          memory)) {
+            context.setLatestPropagationAttempt();
             return;
         }
         

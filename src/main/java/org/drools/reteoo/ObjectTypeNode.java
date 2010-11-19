@@ -97,7 +97,9 @@ public class ObjectTypeNode extends ObjectSource
     private transient ExpireJob job              = new ExpireJob();
 
     private CompiledNetwork     compiledNetwork;
-
+    
+    private boolean isPropagating = false;
+    
     public ObjectTypeNode() {
 
     }
@@ -177,6 +179,7 @@ public class ObjectTypeNode extends ObjectSource
     public void assertObject(final InternalFactHandle factHandle,
                              final PropagationContext context,
                              final InternalWorkingMemory workingMemory) {
+        
         if ( this.objectMemoryEnabled ) {
             final ObjectHashSet memory = (ObjectHashSet) workingMemory.getNodeMemory( this );
             memory.add( factHandle,
@@ -187,9 +190,11 @@ public class ObjectTypeNode extends ObjectSource
                                           context,
                                           workingMemory );
         } else {
+            isPropagating = true;
             this.sink.propagateAssertObject( factHandle,
                                              context,
                                              workingMemory );
+            isPropagating = false;
         }
 
         if ( this.expirationOffset >= 0 && this.expirationOffset != Long.MAX_VALUE ) {
@@ -270,13 +275,31 @@ public class ObjectTypeNode extends ObjectSource
     public void updateSink(final ObjectSink sink,
                            final PropagationContext context,
                            final InternalWorkingMemory workingMemory) {
+        
         final ObjectHashSet memory = (ObjectHashSet) workingMemory.getNodeMemory( this );
         
         Iterator it = memory.iterator();
         for ( ObjectEntry entry = (ObjectEntry) it.next(); entry != null; entry = (ObjectEntry) it.next() ) {
-            sink.assertObject( (InternalFactHandle) entry.getValue(),
-                               context,
-                               workingMemory );
+            
+            InternalFactHandle handle = (InternalFactHandle) entry.getValue();
+            InternalFactHandle ctxHandle = (InternalFactHandle)context.getFactHandle(); 
+            
+            if (isPropagating) {
+                
+                if(ctxHandle == null || 
+                 handle.getId() < ctxHandle.getId() ||
+                 context.getLatestPropagationAttempt() == ctxHandle.getId()) {
+                
+                    sink.assertObject( handle,
+                                       context,
+                                       workingMemory );
+                }
+            } else {
+                sink.assertObject( handle,
+                        context,
+                        workingMemory );
+                
+            }
         }
     }
 
