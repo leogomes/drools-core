@@ -70,7 +70,7 @@ public class PropagationContextImpl
         this.dormantActivations = 0;
         this.entryPoint = EntryPoint.DEFAULT;
         this.originOffset = -1;
-        this.latestPropagationAttempt = -1;
+        resetLatestPropagationAttempt();
     }
 
     public PropagationContextImpl(final long number,
@@ -90,7 +90,7 @@ public class PropagationContextImpl
         this.dormantActivations = dormantActivations;
         this.entryPoint = entryPoint;
         this.originOffset = -1;
-        this.latestPropagationAttempt = -1;
+        resetLatestPropagationAttempt();
     }
 
     public void readExternal(ObjectInput in) throws IOException,
@@ -202,6 +202,12 @@ public class PropagationContextImpl
     public void setLatestPropagationAttempt() {
         this.latestPropagationAttempt = this.factHandle.getId();
     }
+
+    public void resetLatestPropagationAttempt() {
+        this.latestPropagationAttempt = -1;
+    }
+    
+    
     
     
 

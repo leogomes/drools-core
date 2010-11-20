@@ -279,29 +279,37 @@ public class ObjectTypeNode extends ObjectSource
         final ObjectHashSet memory = (ObjectHashSet) workingMemory.getNodeMemory( this );
         
         Iterator it = memory.iterator();
-        for ( ObjectEntry entry = (ObjectEntry) it.next(); entry != null; entry = (ObjectEntry) it.next() ) {
             
-            InternalFactHandle handle = (InternalFactHandle) entry.getValue();
+            
             InternalFactHandle ctxHandle = (InternalFactHandle)context.getFactHandle(); 
             
-            if (isPropagating) {
+            if (!isPropagating || 
+                    (isPropagating && context.getLatestPropagationAttempt() == ctxHandle.getId())){
                 
-                if(ctxHandle == null || 
-                 handle.getId() < ctxHandle.getId() ||
-                 context.getLatestPropagationAttempt() == ctxHandle.getId()) {
+                context.resetLatestPropagationAttempt();
                 
-                    sink.assertObject( handle,
-                                       context,
-                                       workingMemory );
+                for ( ObjectEntry entry = (ObjectEntry) it.next(); entry != null; entry = (ObjectEntry) it.next() ) {
+                    // Assert everything
+                    sink.assertObject( (InternalFactHandle) entry.getValue(),
+                            context,
+                            workingMemory );
                 }
-            } else {
-                sink.assertObject( handle,
-                        context,
-                        workingMemory );
                 
+            } else {
+                
+                for ( ObjectEntry entry = (ObjectEntry) it.next(); entry != null; entry = (ObjectEntry) it.next() ) {
+                    InternalFactHandle handle = (InternalFactHandle) entry.getValue();
+                    // Exclude the current fact propagation
+                    if (handle.getId() != ctxHandle.getId()) {
+                        sink.assertObject( handle,
+                                context,
+                                workingMemory );
+                    }
+                }
             }
-        }
     }
+    
+
 
     /**
      * Rete needs to know that this ObjectTypeNode has been added

@@ -137,7 +137,8 @@ public class AlphaNode extends ObjectSource
     public void assertObject(final InternalFactHandle factHandle,
                              final PropagationContext context,
                              final InternalWorkingMemory workingMemory) {
-        
+
+// Be careful as this test won't call setLatestPropagationAttempt() to notify the JoinNode of an attempt.        
 //        if (this.sink.shouldPropagate(workingMemory)) {
         	
             final AlphaMemory memory = (AlphaMemory) workingMemory.getNodeMemory( this );

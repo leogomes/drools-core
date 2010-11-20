@@ -61,5 +61,6 @@ public interface PropagationContext
     
     public int getLatestPropagationAttempt();
     public void setLatestPropagationAttempt();
+    public void resetLatestPropagationAttempt();
 
 }
