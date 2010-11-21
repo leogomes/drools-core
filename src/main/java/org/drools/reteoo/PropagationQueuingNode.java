@@ -105,9 +105,9 @@ public class PropagationQueuingNode extends ObjectSource
         final PropagationQueueingNodeMemory memory = (PropagationQueueingNodeMemory) workingMemory.getNodeMemory( this );
 
         // this is just sanity code. We may remove it in the future, but keeping it for now.
-        if ( !memory.isEmpty() ) {
-            throw new RuntimeDroolsException( "Error updating sink. Not safe to update sink as the PropagatingQueueingNode memory is not for node: " + this.toString() );
-        }
+//        if ( !memory.isEmpty() ) {
+//            throw new RuntimeDroolsException( "Error updating sink. Not safe to update sink as the PropagatingQueueingNode memory is not for node: " + this.toString() );
+//        }
 
         // as this node is simply a queue, ask object source to update the child sink directly
         this.source.updateSink( sink,

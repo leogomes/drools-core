@@ -265,6 +265,7 @@ public class JoinNodeTest extends DroolsTestCase {
 		final DefaultFactHandle f0 = (DefaultFactHandle) this.workingMemory
 				.insert("test0");
 
+		((PropagationContextImpl) this.context).setFactHandle(f0);
 		// assert object, should add one to right memory
 		this.node.assertObject(f0, this.context, this.workingMemory);
 		assertEquals(0, this.memory.getLeftTupleMemory().size());
@@ -299,7 +300,9 @@ public class JoinNodeTest extends DroolsTestCase {
 		// assert first right object
 		final DefaultFactHandle f0 = (DefaultFactHandle) this.workingMemory
 				.insert("test0");
-		this.node.assertObject(f0, this.context, this.workingMemory);
+	    ((PropagationContextImpl) this.context).setFactHandle(f0);
+		
+	    this.node.assertObject(f0, this.context, this.workingMemory);
 
 		// assert tuple, should add left memory should be 2
 		final DefaultFactHandle f1 = new DefaultFactHandle(1, "cheese");
@@ -348,6 +351,8 @@ public class JoinNodeTest extends DroolsTestCase {
 		// setup 2 tuples 3 fact handles
 		final DefaultFactHandle f0 = (DefaultFactHandle) this.workingMemory
 				.insert("test0");
+	    ((PropagationContextImpl) this.context).setFactHandle(f0);
+	    
 		this.node.assertObject(f0, this.context, this.workingMemory);
 
 		final DefaultFactHandle f1 = (DefaultFactHandle) this.workingMemory
@@ -410,10 +415,16 @@ public class JoinNodeTest extends DroolsTestCase {
 	public void testConstraintPropagations() throws Exception {
 		when( constraint.isAllowedCachedLeft(any(ContextEntry.class), any(InternalFactHandle.class))).thenReturn(false);
 		when( constraint.isAllowedCachedRight(any(LeftTuple.class), any(ContextEntry.class))).thenReturn(false);
-
+		
 		// assert first right object
 		final DefaultFactHandle f0 = (DefaultFactHandle) this.workingMemory
 				.insert("test0");
+		
+        ((PropagationContextImpl) this.context).setFactHandle(f0);
+        // let's add it to the source to make sure the join get's properly updated
+        // if right side is unlinked and will be linked later
+        this.objectSource.addFact(f0);
+		
 		this.node.assertObject(f0, this.context, this.workingMemory);
 
 		// assert tuple, should add left memory should be 2
@@ -427,6 +438,8 @@ public class JoinNodeTest extends DroolsTestCase {
 		this.node.retractRightTuple(f0.getFirstRightTuple(), this.context,
 				this.workingMemory);
 		assertLength(0, this.sink.getRetracted());
+		// clean-up
+        this.objectSource.removeFact(f0);
 	}
 
 	public void testUpdateSink() {

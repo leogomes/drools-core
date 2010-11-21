@@ -1,0 +1,1269 @@
+Index: src/main/java/org/drools/reteoo/SingleObjectSinkAdapter.java
+===================================================================
+--- src/main/java/org/drools/reteoo/SingleObjectSinkAdapter.java	(revision 35925)
++++ src/main/java/org/drools/reteoo/SingleObjectSinkAdapter.java	(working copy)
+@@ -86,4 +86,10 @@
+         return 1;
+     }
+ 
++    public boolean shouldPropagate(final InternalWorkingMemory workingMemory) {
++        return isLinked(this.sink, workingMemory);
++    }
++    
++    
++
+ }
+Index: src/main/java/org/drools/reteoo/AbstractObjectSinkAdapter.java
+===================================================================
+--- src/main/java/org/drools/reteoo/AbstractObjectSinkAdapter.java	(revision 35925)
++++ src/main/java/org/drools/reteoo/AbstractObjectSinkAdapter.java	(working copy)
+@@ -21,6 +21,8 @@
+ import java.io.ObjectInput;
+ import java.io.ObjectOutput;
+ 
++import org.drools.common.InternalWorkingMemory;
++import org.drools.common.NodeMemory;
+ import org.drools.common.RuleBasePartitionId;
+ 
+ /**
+@@ -60,4 +62,17 @@
+     public void setPartitionId( RuleBasePartitionId partitionId ) {
+         this.partitionId = partitionId;
+     }
++    
++    
++   
++    protected boolean isLinked(final ObjectSink sink, 
++                               final InternalWorkingMemory workingMemory) {
++        
++        if(sink instanceof JoinNode) {
++            final BetaMemory memory = (BetaMemory) workingMemory.getNodeMemory((NodeMemory) sink );
++            return !memory.isRightUnlinked();
++        }
++        
++        return true;
++    }
+ }
+Index: src/test/java/org/drools/reteoo/ObjectTypeNodeTest.java
+===================================================================
+--- src/test/java/org/drools/reteoo/ObjectTypeNodeTest.java	(revision 35925)
++++ src/test/java/org/drools/reteoo/ObjectTypeNodeTest.java	(working copy)
+@@ -343,7 +343,7 @@
+                       sink2.getAsserted().size() );
+ 
+         objectTypeNode.updateSink( sink2,
+-                                   null,
++                                   new PropagationContextImpl(),
+                                    workingMemory );
+ 
+         assertEquals( 2,
+Index: src/main/java/org/drools/core/util/ConcurrentRightTupleList.java
+===================================================================
+--- src/main/java/org/drools/core/util/ConcurrentRightTupleList.java	(revision 35925)
++++ src/main/java/org/drools/core/util/ConcurrentRightTupleList.java	(working copy)
+@@ -202,4 +202,13 @@
+     public Entry[] toArray() {
+         throw new UnsupportedOperationException( "method is not implemented yet" );
+     }    
++    
++    public void clear() {
++        
++        RightTuple rightTuple = null; 
++        
++        while((rightTuple = (RightTuple) iterator().next()) != null) {
++            remove(rightTuple);
++        }
++    }
+ }
+Index: src/main/java/org/drools/reteoo/ObjectTypeNode.java
+===================================================================
+--- src/main/java/org/drools/reteoo/ObjectTypeNode.java	(revision 35925)
++++ src/main/java/org/drools/reteoo/ObjectTypeNode.java	(working copy)
+@@ -97,7 +97,9 @@
+     private transient ExpireJob job              = new ExpireJob();
+ 
+     private CompiledNetwork     compiledNetwork;
+-
++    
++    private boolean isPropagating = false;
++    
+     public ObjectTypeNode() {
+ 
+     }
+@@ -177,6 +179,7 @@
+     public void assertObject(final InternalFactHandle factHandle,
+                              final PropagationContext context,
+                              final InternalWorkingMemory workingMemory) {
++        
+         if ( this.objectMemoryEnabled ) {
+             final ObjectHashSet memory = (ObjectHashSet) workingMemory.getNodeMemory( this );
+             memory.add( factHandle,
+@@ -187,9 +190,11 @@
+                                           context,
+                                           workingMemory );
+         } else {
++            isPropagating = true;
+             this.sink.propagateAssertObject( factHandle,
+                                              context,
+                                              workingMemory );
++            isPropagating = false;
+         }
+ 
+         if ( this.expirationOffset >= 0 && this.expirationOffset != Long.MAX_VALUE ) {
+@@ -270,15 +275,42 @@
+     public void updateSink(final ObjectSink sink,
+                            final PropagationContext context,
+                            final InternalWorkingMemory workingMemory) {
++        
+         final ObjectHashSet memory = (ObjectHashSet) workingMemory.getNodeMemory( this );
++        
+         Iterator it = memory.iterator();
+-        for ( ObjectEntry entry = (ObjectEntry) it.next(); entry != null; entry = (ObjectEntry) it.next() ) {
+-            sink.assertObject( (InternalFactHandle) entry.getValue(),
+-                               context,
+-                               workingMemory );
+-        }
++            
++            
++            InternalFactHandle ctxHandle = (InternalFactHandle)context.getFactHandle(); 
++            
++            if (!isPropagating || 
++                    (isPropagating && context.getLatestPropagationAttempt() == ctxHandle.getId())){
++                
++                context.resetLatestPropagationAttempt();
++                
++                for ( ObjectEntry entry = (ObjectEntry) it.next(); entry != null; entry = (ObjectEntry) it.next() ) {
++                    // Assert everything
++                    sink.assertObject( (InternalFactHandle) entry.getValue(),
++                            context,
++                            workingMemory );
++                }
++                
++            } else {
++                
++                for ( ObjectEntry entry = (ObjectEntry) it.next(); entry != null; entry = (ObjectEntry) it.next() ) {
++                    InternalFactHandle handle = (InternalFactHandle) entry.getValue();
++                    // Exclude the current fact propagation
++                    if (handle.getId() != ctxHandle.getId()) {
++                        sink.assertObject( handle,
++                                context,
++                                workingMemory );
++                    }
++                }
++            }
+     }
++    
+ 
++
+     /**
+      * Rete needs to know that this ObjectTypeNode has been added
+      */
+Index: src/main/java/org/drools/reteoo/Unlinkable.java
+===================================================================
+--- src/main/java/org/drools/reteoo/Unlinkable.java	(revision 0)
++++ src/main/java/org/drools/reteoo/Unlinkable.java	(revision 0)
+@@ -0,0 +1,39 @@
++/**
++ * Copyright 2010 JBoss Inc
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package org.drools.reteoo;
++
++/**
++ * A marker interface to specify unlinkable node memories.
++ * 
++ * @author lgomes
++ */
++public interface Unlinkable {
++
++	/** Whether or not the left side is unlinked. */
++	boolean isLeftUnlinked();
++
++	/** Whether or not the right side is unlinked. */
++	boolean isRightUnlinked();
++	
++	void linkLeft();
++	
++	void linkRight();
++	
++	void unlinkLeft();
++	
++	void unlinkRight();
++
++}
+Index: src/test/java/org/drools/reteoo/MockObjectSource.java
+===================================================================
+--- src/test/java/org/drools/reteoo/MockObjectSource.java	(revision 35925)
++++ src/test/java/org/drools/reteoo/MockObjectSource.java	(working copy)
+@@ -78,6 +78,10 @@
+     public void addFact(final InternalFactHandle handle) {
+         this.facts.add( handle );
+     }
++    
++    public void removeFact(final InternalFactHandle handle) {
++        this.facts.remove( handle );
++    }
+ 
+     public void updateSink(final ObjectSink sink,
+                            final PropagationContext context,
+Index: src/main/java/org/drools/reteoo/BetaNode.java
+===================================================================
+--- src/main/java/org/drools/reteoo/BetaNode.java	(revision 35925)
++++ src/main/java/org/drools/reteoo/BetaNode.java	(working copy)
+@@ -113,7 +113,7 @@
+         this.behavior = new BehaviorManager( behaviors );
+ 
+         if ( this.constraints == null ) {
+-            throw new RuntimeException( "cannot have null constraints, must at least be an instance of EmptyBetaConstraints" );
++            throw new IllegalStateException( "cannot have null constraints, must at least be an instance of EmptyBetaConstraints" );
+         }
+     }
+ 
+@@ -210,13 +210,25 @@
+                                                                                       PropagationContext.RULE_ADDITION,
+                                                                                       null,
+                                                                                       null,
++                                                                                      
+                                                                                       null );
++            // Right is linked in the beginning, so new node will be able to 
++            // have their tuples propagated without problems.
++            if (!(this instanceof JoinNode)) {
++            
+             this.rightInput.updateSink( this,
+                                         propagationContext,
+                                         workingMemory );
+-            this.leftInput.updateSink( this,
+-                                       propagationContext,
+-                                       workingMemory );
++            }
++            
++            // lgomes: temporary hack.
++            //if (!(this instanceof JoinNode)) {
++                // At this point, if there were right tuples propagated, left will be linked
++                // and update sink will already have been called
++                this.leftInput.updateSink( this,
++                                           propagationContext,
++                                           workingMemory );
++            //}
+         }
+ 
+     }
+@@ -300,6 +312,7 @@
+                              ModifyPreviousTuples modifyPreviousTuples,
+                              PropagationContext context,
+                              InternalWorkingMemory workingMemory) {
++        
+         RightTuple rightTuple = modifyPreviousTuples.removeRightTuple( this );
+         if ( rightTuple != null ) {
+             rightTuple.reAdd();
+@@ -319,6 +332,7 @@
+                                 ModifyPreviousTuples modifyPreviousTuples,
+                                 PropagationContext context,
+                                 InternalWorkingMemory workingMemory) {
++        
+         LeftTuple leftTuple = modifyPreviousTuples.removeLeftTuple( this );
+         if ( leftTuple != null ) {
+             leftTuple.reAdd(); //
+@@ -485,4 +499,68 @@
+         }
+     }
+ 
++    protected boolean leftUnlinked(final PropagationContext context, 
++            final InternalWorkingMemory workingMemory, final BetaMemory memory) {
++        
++        // If left input is unlinked, don't do anything.
++        if(memory.isLeftUnlinked()) {
++            return true;
++        }
++        
++        if (memory.isRightUnlinked()) {
++            memory.linkRight();
++            // updates the right input memory before going on.
++            this.rightInput.updateSink(this, context, workingMemory);
++        }
++        
++        return false;
++    }
++    
++    protected boolean rightUnlinked(final PropagationContext context,
++            final InternalWorkingMemory workingMemory, final BetaMemory memory) {
++        
++        if (memory.isRightUnlinked()) {
++            return true;
++        }
++        
++        if (memory.isLeftUnlinked()) {
++            
++            memory.linkLeft();
++            // updates the left input memory before going on.
++            this.leftInput.updateSink(this, context, workingMemory);
++        }
++        
++        return false;
++    }
++    
++
+ }
+Index: src/main/java/org/drools/reteoo/ObjectSinkPropagator.java
+===================================================================
+--- src/main/java/org/drools/reteoo/ObjectSinkPropagator.java	(revision 35925)
++++ src/main/java/org/drools/reteoo/ObjectSinkPropagator.java	(working copy)
+@@ -44,5 +44,8 @@
+                                       ModifyPreviousTuples modifyPreviousTuples,
+                                       PropagationContext context,
+                                       InternalWorkingMemory workingMemory);
++    
++    public boolean shouldPropagate(final InternalWorkingMemory workingMemory);
+ 
++
+ }
+Index: src/main/java/org/drools/reteoo/CompositeObjectSinkAdapter.java
+===================================================================
+--- src/main/java/org/drools/reteoo/CompositeObjectSinkAdapter.java	(revision 35925)
++++ src/main/java/org/drools/reteoo/CompositeObjectSinkAdapter.java	(working copy)
+@@ -338,6 +338,7 @@
+     public void propagateAssertObject(final InternalFactHandle factHandle,
+                                       final PropagationContext context,
+                                       final InternalWorkingMemory workingMemory) {
++        
+         final Object object = factHandle.getObject();
+ 
+         // Iterates the FieldIndex collection, which tells you if particularly field is hashed or not
+@@ -447,9 +448,12 @@
+                                            PropagationContext context,
+                                            InternalWorkingMemory workingMemory,
+                                            ObjectSink sink) {
+-        sink.assertObject( factHandle,
+-                           context,
+-                           workingMemory );
++        
++        if (isLinked(sink, workingMemory)) {
++            sink.assertObject( factHandle,
++                               context,
++                               workingMemory );
++        }
+     }
+ 
+     protected void doPropagateModifyObject(InternalFactHandle factHandle,
+@@ -520,7 +524,20 @@
+     public int size() {
+         return (this.otherSinks != null ? this.otherSinks.size() : 0) + (this.hashableSinks != null ? this.hashableSinks.size() : 0) + (this.hashedSinkMap != null ? this.hashedSinkMap.size() : 0);
+     }
++    
++    
+ 
++    
++    public boolean shouldPropagate(InternalWorkingMemory workingMemory) {
++        /* lgomes: Returning true here, because I don't want to 
++         * iterate twice on the sinks. The only situation where 
++         * I wouldn't propagate is when all the sinks are unlinked.
++         * */
++        return true;
++    }
++
++
++
+     public static class HashKey
+         implements
+         Externalizable {
+Index: src/main/java/org/drools/core/util/RightTupleList.java
+===================================================================
+--- src/main/java/org/drools/core/util/RightTupleList.java	(revision 35925)
++++ src/main/java/org/drools/core/util/RightTupleList.java	(working copy)
+@@ -266,4 +266,14 @@
+ 
+         return builder.toString();
+     }
++    
++    public void clear() {
++        
++        RightTuple rightTuple = null; 
++        
++        while((rightTuple = (RightTuple) iterator().next()) != null) {
++            remove(rightTuple);
++        }
++    }
++
+ }
+Index: src/main/java/org/drools/spi/PropagationContext.java
+===================================================================
+--- src/main/java/org/drools/spi/PropagationContext.java	(revision 35925)
++++ src/main/java/org/drools/spi/PropagationContext.java	(working copy)
+@@ -59,5 +59,8 @@
+ 
+     public EntryPoint getEntryPoint();
+     
++    public int getLatestPropagationAttempt();
++    public void setLatestPropagationAttempt();
++    public void resetLatestPropagationAttempt();
+ 
+ }
+Index: src/test/java/org/drools/reteoo/JoinNodeTest.java
+===================================================================
+--- src/test/java/org/drools/reteoo/JoinNodeTest.java	(revision 35925)
++++ src/test/java/org/drools/reteoo/JoinNodeTest.java	(working copy)
+@@ -156,7 +156,7 @@
+ 				.newRuleBase();
+ 		BuildContext buildContext = new BuildContext(ruleBase, ruleBase
+ 				.getReteooBuilder().getIdGenerator());
+-		final JoinNode joinNode = new JoinNode(2, tupleSource, objectSource,
++		final BetaNode joinNode = new JoinNode(2, tupleSource, objectSource,
+ 				EmptyBetaConstraints.getInstance(),
+ 				Behavior.EMPTY_BEHAVIOR_LIST, buildContext);
+ 
+@@ -180,21 +180,22 @@
+ 
+ 		// assert tuple, should add one to left memory
+ 		this.node.assertLeftTuple(tuple0, this.context, this.workingMemory);
+-		// check memories, left memory is populated, right memory is emptys
+-		assertEquals(1, this.memory.getLeftTupleMemory().size());
++		// check memories, left memory is empty since it's unlinked in the beginning.
++		assertEquals(0, this.memory.getLeftTupleMemory().size());
+ 		assertEquals(0, this.memory.getRightTupleMemory().size());
+ 
+ 		// assert tuple, should add left memory should be 2
+ 		final DefaultFactHandle f1 = new DefaultFactHandle(1, "cheese");
+ 		final LeftTuple tuple1 = new LeftTuple(f1, this.node, true);
+ 		this.node.assertLeftTuple(tuple1, this.context, this.workingMemory);
+-		assertEquals(2, this.memory.getLeftTupleMemory().size());
++		// Still empty
++		assertEquals(0, this.memory.getLeftTupleMemory().size());
++		
+ 
+ 		LeftTuple leftTuple = this.memory.getLeftTupleMemory().getFirst(
+ 				(LeftTuple) null);
+ 
+-		assertEquals(tuple0, leftTuple);
+-		assertEquals(tuple1, leftTuple.getNext());
++		assertNull(leftTuple);
+ 	}
+ 
+ 	/**
+@@ -264,6 +265,7 @@
+ 		final DefaultFactHandle f0 = (DefaultFactHandle) this.workingMemory
+ 				.insert("test0");
+ 
++		((PropagationContextImpl) this.context).setFactHandle(f0);
+ 		// assert object, should add one to right memory
+ 		this.node.assertObject(f0, this.context, this.workingMemory);
+ 		assertEquals(0, this.memory.getLeftTupleMemory().size());
+@@ -298,7 +300,9 @@
+ 		// assert first right object
+ 		final DefaultFactHandle f0 = (DefaultFactHandle) this.workingMemory
+ 				.insert("test0");
+-		this.node.assertObject(f0, this.context, this.workingMemory);
++	    ((PropagationContextImpl) this.context).setFactHandle(f0);
++		
++	    this.node.assertObject(f0, this.context, this.workingMemory);
+ 
+ 		// assert tuple, should add left memory should be 2
+ 		final DefaultFactHandle f1 = new DefaultFactHandle(1, "cheese");
+@@ -347,6 +351,8 @@
+ 		// setup 2 tuples 3 fact handles
+ 		final DefaultFactHandle f0 = (DefaultFactHandle) this.workingMemory
+ 				.insert("test0");
++	    ((PropagationContextImpl) this.context).setFactHandle(f0);
++	    
+ 		this.node.assertObject(f0, this.context, this.workingMemory);
+ 
+ 		final DefaultFactHandle f1 = (DefaultFactHandle) this.workingMemory
+@@ -409,10 +415,16 @@
+ 	public void testConstraintPropagations() throws Exception {
+ 		when( constraint.isAllowedCachedLeft(any(ContextEntry.class), any(InternalFactHandle.class))).thenReturn(false);
+ 		when( constraint.isAllowedCachedRight(any(LeftTuple.class), any(ContextEntry.class))).thenReturn(false);
+-
++		
+ 		// assert first right object
+ 		final DefaultFactHandle f0 = (DefaultFactHandle) this.workingMemory
+ 				.insert("test0");
++		
++        ((PropagationContextImpl) this.context).setFactHandle(f0);
++        // let's add it to the source to make sure the join get's properly updated
++        // if right side is unlinked and will be linked later
++        this.objectSource.addFact(f0);
++		
+ 		this.node.assertObject(f0, this.context, this.workingMemory);
+ 
+ 		// assert tuple, should add left memory should be 2
+@@ -426,6 +438,8 @@
+ 		this.node.retractRightTuple(f0.getFirstRightTuple(), this.context,
+ 				this.workingMemory);
+ 		assertLength(0, this.sink.getRetracted());
++		// clean-up
++        this.objectSource.removeFact(f0);
+ 	}
+ 
+ 	public void testUpdateSink() {
+@@ -440,7 +454,7 @@
+ 		BuildContext buildContext = new BuildContext(ruleBase, ruleBase
+ 				.getReteooBuilder().getIdGenerator());
+ 
+-		final JoinNode joinNode = new JoinNode(1, this.tupleSource,
++		final BetaNode joinNode = new JoinNode(1, this.tupleSource,
+ 				this.objectSource, EmptyBetaConstraints.getInstance(),
+ 				Behavior.EMPTY_BEHAVIOR_LIST, buildContext);
+ 
+@@ -455,22 +469,22 @@
+ 
+ 		joinNode.assertLeftTuple(tuple1, this.context, workingMemory);
+ 
+-		final String string1 = "string1";
+-		final DefaultFactHandle string1Handle = new DefaultFactHandle(1,
+-				string1);
++		// assert doesn't add anything because left is initially empty
++		assertLength(0, sink1.getAsserted());
++		
++        final String string1 = "string1";
++	    final DefaultFactHandle string1Handle = new DefaultFactHandle(1,
++	                string1);
+ 
+-		joinNode.assertObject(string1Handle, this.context, workingMemory);
++		// let's add it also to the source, so that the JoinNode
++		// gets properly updated
++		this.objectSource.addFact(string1Handle);
+ 
+-		assertLength(1, sink1.getAsserted());
++		joinNode.rightInput.updateSink(joinNode, this.context, workingMemory);
++		
++		assertEquals(1, this.tupleSource.getUdated());
+ 
+-		// Add the new sink, this should be updated from the re-processed
+-		// joinnode memory
+-		final MockLeftTupleSink sink2 = new MockLeftTupleSink(3);
+-		assertLength(0, sink2.getAsserted());
+-
+-		joinNode.updateSink(sink2, this.context, workingMemory);
+-
+-		assertLength(1, sink2.getAsserted());
++		
+ 	}
+ 
+ }
+\ No newline at end of file
+Index: src/main/java/org/drools/reteoo/LeftTupleMemory.java
+===================================================================
+--- src/main/java/org/drools/reteoo/LeftTupleMemory.java	(revision 35925)
++++ src/main/java/org/drools/reteoo/LeftTupleMemory.java	(working copy)
+@@ -39,5 +39,7 @@
+     //    public Entry[] getTable();
+ 
+     public Entry[] toArray();
++    
++    public void clear();
+ 
+ }
+Index: src/test/resources/org/drools/reteoo/test/RightUnlinkingModify.nodeTestCase
+===================================================================
+--- src/test/resources/org/drools/reteoo/test/RightUnlinkingModify.nodeTestCase	(revision 0)
++++ src/test/resources/org/drools/reteoo/test/RightUnlinkingModify.nodeTestCase	(revision 0)
+@@ -0,0 +1,99 @@
++TestCase "RightUnlinkingModify"
++
++Setup
++	ObjectTypeNode:
++	    otnLeft1, org.drools.Person;
++	LeftInputAdapterNode:
++	    lian0, otnLeft1;
++	ObjectTypeNode:
++	    otnRight1, org.drools.Person;
++	ObjectTypeNode:
++	    otnRight2, org.drools.Person;
++	ObjectTypeNode:
++	    otnRight3, org.drools.Person;
++	Binding:
++	     p1, 0, org.drools.Person, age;
++	JoinNode:
++	    join1, lian0, otnRight1;
++	    age, !=, p1;
++	JoinNode:
++	    join2, join1, otnRight2;
++	    age, !=, p1;
++	JoinNode:
++	    join3, join1, otnRight3;
++	    age, !=, p1;
++	Facts:
++	    new org.drools.Person('darth', 35), new org.drools.Person('bobba', 36),
++	    new org.drools.Person('yoda', 37), new org.drools.Person('luke', 38),
++	    new org.drools.Person('dave', 33), new org.drools.Person('bob', 32),
++	    new org.drools.Person('dave', 31), new org.drools.Person('bob', 30);
++	    
++
++Test "RightUnlinkingModify"	    
++
++	assert:
++		otnRight1, [h0];	// will link left side on Join1
++		otnRight2, [h1]; 	// will link left side on Join2
++	join1:
++		rightMemory, [h0];
++	join2:
++		rightMemory, [h1];
++	
++	assert:
++		otnLeft1, [h2];
++	join1:
++		leftMemory, [[h2]];
++		rightMemory, [h0];
++	join2:
++		leftMemory, [[h2,h0]];
++		rightMemory, [h1]; 					
++
++	With:
++	    h2, age = 35;
++	modify:
++	    otnLeft1, [h2];
++
++	// With the modify, [h2,h0] don't match anymore 		
++	join1:
++		leftMemory, [[h2]];
++		rightMemory, [h0];
++	join2:
++		leftMemory, [];		// left tuple is retracted
++		rightMemory, []; 	// right side is unlinked
++		
++	assert:
++		otnRight2, [h3];	
++	join2:
++		rightMemory, []; 	// remain empty since it's unlinked
++
++	With:
++	    h1, age = 40;
++	modify:
++	    otnRight2, [h1];
++	join2:
++		rightMemory, []; 	// modification is also not propagated, since it's unlinked
++		
++	assert:
++		otnLeft1, [h4];
++	join1:
++		leftMemory, [[h2], [h4]];
++		rightMemory, [h0];
++
++	join2:
++		leftMemory, [[h4,h0]];	// match was propagated since left was linked
++		rightMemory, [h3, h1];	// right was linked and populated // TODO: order right tuples
++		
++	retract:
++		otnRight2, [h1];
++		otnRight2, [h3];
++		
++	join2:
++		leftMemory, [];			// left is unlinked
++		rightMemory, [];
++
++	retract:
++		otnRight1, [h0];
++		
++	join1:
++		leftMemory, [];			// left is unlinked
++		rightMemory, [];
+\ No newline at end of file
+Index: src/main/java/org/drools/reteoo/LeftTuple.java
+===================================================================
+--- src/main/java/org/drools/reteoo/LeftTuple.java	(revision 35925)
++++ src/main/java/org/drools/reteoo/LeftTuple.java	(working copy)
+@@ -18,12 +18,10 @@
+ 
+ import java.util.Arrays;
+ 
+-import org.drools.common.AgendaItem;
+ import org.drools.common.InternalFactHandle;
+ import org.drools.core.util.Entry;
+ import org.drools.core.util.LeftTupleList;
+ import org.drools.rule.Declaration;
+-import org.drools.spi.Activation;
+ import org.drools.spi.Tuple;
+ 
+ public class LeftTuple
+Index: src/main/java/org/drools/common/PropagationContextImpl.java
+===================================================================
+--- src/main/java/org/drools/common/PropagationContextImpl.java	(revision 35925)
++++ src/main/java/org/drools/common/PropagationContextImpl.java	(working copy)
+@@ -49,6 +49,8 @@
+     private EntryPoint         entryPoint;
+     
+     private int                originOffset;
++    
++    private int                 latestPropagationAttempt;
+ 
+     public PropagationContextImpl() {
+ 
+@@ -68,6 +70,7 @@
+         this.dormantActivations = 0;
+         this.entryPoint = EntryPoint.DEFAULT;
+         this.originOffset = -1;
++        resetLatestPropagationAttempt();
+     }
+ 
+     public PropagationContextImpl(final long number,
+@@ -87,6 +90,7 @@
+         this.dormantActivations = dormantActivations;
+         this.entryPoint = entryPoint;
+         this.originOffset = -1;
++        resetLatestPropagationAttempt();
+     }
+ 
+     public void readExternal(ObjectInput in) throws IOException,
+@@ -99,6 +103,7 @@
+         this.leftTuple = (LeftTuple) in.readObject();
+         this.entryPoint = (EntryPoint) in.readObject();
+         this.originOffset = in.readInt();
++        this.latestPropagationAttempt = in.readInt();
+     }
+ 
+     public void writeExternal(ObjectOutput out) throws IOException {
+@@ -110,6 +115,7 @@
+         out.writeObject( this.leftTuple );
+         out.writeObject( this.entryPoint );
+         out.writeInt( this.originOffset );
++        out.writeInt( this.latestPropagationAttempt );
+     }
+ 
+     public long getPropagationNumber() {
+@@ -189,4 +195,20 @@
+         this.originOffset = originOffset;
+     }
+ 
++    public int getLatestPropagationAttempt() {
++        return latestPropagationAttempt;
++    }
++
++    public void setLatestPropagationAttempt() {
++        this.latestPropagationAttempt = this.factHandle.getId();
++    }
++
++    public void resetLatestPropagationAttempt() {
++        this.latestPropagationAttempt = -1;
++    }
++    
++    
++    
++    
++
+ }
+Index: src/main/java/org/drools/reteoo/BetaMemory.java
+===================================================================
+--- src/main/java/org/drools/reteoo/BetaMemory.java	(revision 35925)
++++ src/main/java/org/drools/reteoo/BetaMemory.java	(working copy)
+@@ -24,36 +24,39 @@
+ import org.drools.core.util.ObjectHashMap;
+ import org.drools.rule.ContextEntry;
+ 
+-public class BetaMemory
+-    implements
+-    Externalizable {
++public class BetaMemory implements Externalizable, Unlinkable {
+ 
+     private static final long serialVersionUID = 510l;
+ 
+-    private LeftTupleMemory   leftTupleMemory;
+-    private RightTupleMemory  rightTupleMemory;
+-    private ObjectHashMap     createdHandles;
+-    private ContextEntry[]    context;
+-    private Object            behaviorContext;
++    private LeftTupleMemory leftTupleMemory;
++    private RightTupleMemory rightTupleMemory;
++    private ObjectHashMap createdHandles;
++    private ContextEntry[] context;
++    private Object behaviorContext;
++    
++    /* Let's start with only left unlinked. */
++    private boolean isLeftUnlinked = false;
++    private boolean isRightUnlinked = true;
+ 
+     public BetaMemory() {
+     }
+ 
+     public BetaMemory(final LeftTupleMemory tupleMemory,
+-                      final RightTupleMemory objectMemory,
+-                      final ContextEntry[] context) {
++            final RightTupleMemory objectMemory, final ContextEntry[] context) {
+         this.leftTupleMemory = tupleMemory;
+         this.rightTupleMemory = objectMemory;
+         this.context = context;
+     }
+ 
+     public void readExternal(ObjectInput in) throws IOException,
+-                                            ClassNotFoundException {
++            ClassNotFoundException {
+         leftTupleMemory = (LeftTupleMemory) in.readObject();
+         rightTupleMemory = (RightTupleMemory) in.readObject();
+         createdHandles = (ObjectHashMap) in.readObject();
+         context = (ContextEntry[]) in.readObject();
+         behaviorContext = (Object) in.readObject();
++        isLeftUnlinked = in.readBoolean();
++        isRightUnlinked = in.readBoolean();
+     }
+ 
+     public void writeExternal(ObjectOutput out) throws IOException {
+@@ -62,6 +65,8 @@
+         out.writeObject( createdHandles );
+         out.writeObject( context );
+         out.writeObject( behaviorContext );
++        out.writeBoolean( isLeftUnlinked );
++        out.writeBoolean( isRightUnlinked );
+     }
+ 
+     public RightTupleMemory getRightTupleMemory() {
+@@ -73,7 +78,7 @@
+     }
+ 
+     public ObjectHashMap getCreatedHandles() {
+-        if ( this.createdHandles == null ) {
++        if (this.createdHandles == null) {
+             this.createdHandles = new ObjectHashMap();
+         }
+         return this.createdHandles;
+@@ -93,4 +98,29 @@
+     public void setBehaviorContext(Object behaviorContext) {
+         this.behaviorContext = behaviorContext;
+     }
++
++    public boolean isLeftUnlinked() {
++        return this.isLeftUnlinked;
++    }
++
++    public boolean isRightUnlinked() {
++        return this.isRightUnlinked;
++    }
++
++    public void linkLeft() {
++        this.isLeftUnlinked = false;
++    }
++
++    public void linkRight() {
++        this.isRightUnlinked = false;
++    }
++
++    public void unlinkLeft() {
++        this.isLeftUnlinked = true;
++    }
++
++    public void unlinkRight() {
++        this.isRightUnlinked = true;
++    }
++
+ }
+Index: src/main/java/org/drools/reteoo/RightTupleMemory.java
+===================================================================
+--- src/main/java/org/drools/reteoo/RightTupleMemory.java	(revision 35925)
++++ src/main/java/org/drools/reteoo/RightTupleMemory.java	(working copy)
+@@ -38,4 +38,6 @@
+     public Entry[] toArray();
+ 
+     public int size();
++    
++    public void clear();
+ }
+Index: src/main/java/org/drools/core/util/RightTupleIndexHashTable.java
+===================================================================
+--- src/main/java/org/drools/core/util/RightTupleIndexHashTable.java	(revision 35925)
++++ src/main/java/org/drools/core/util/RightTupleIndexHashTable.java	(working copy)
+@@ -259,7 +259,7 @@
+                                            this.table.length );
+                 RightTupleList previous = null;
+                 RightTupleList current = (RightTupleList) this.table[index];
+-                while ( current != memory ) {
++                while (current != memory ) {
+                     previous = current;
+                     current = (RightTupleList) current.getNext();
+                 }
+@@ -417,4 +417,15 @@
+ 
+         return builder.toString();
+     }
++    
++    public void clear() {
++
++        Iterator it = iterator();
++        
++        for ( RightTuple rightTuple = (RightTuple) it.next(); rightTuple != null; rightTuple = (RightTuple) it.next() ) {
++            remove(rightTuple);
++            rightTuple.setMemory(null);
++        }
++    }
++
+ }
+Index: src/main/java/org/drools/reteoo/JoinNode.java
+===================================================================
+--- src/main/java/org/drools/reteoo/JoinNode.java	(revision 35925)
++++ src/main/java/org/drools/reteoo/JoinNode.java	(working copy)
+@@ -20,6 +20,7 @@
+ import org.drools.common.BetaConstraints;
+ import org.drools.common.InternalFactHandle;
+ import org.drools.common.InternalWorkingMemory;
++import org.drools.common.NodeMemory;
+ import org.drools.core.util.Iterator;
+ import org.drools.reteoo.builder.BuildContext;
+ import org.drools.rule.Behavior;
+@@ -58,9 +59,19 @@
+     public void assertLeftTuple(final LeftTuple leftTuple,
+                                 final PropagationContext context,
+                                 final InternalWorkingMemory workingMemory) {
++        
+         final BetaMemory memory = (BetaMemory) workingMemory.getNodeMemory( this );
+ 
++
++        if(leftUnlinked(context,
++                        workingMemory,
++                        memory)) {
++            return;
++        }
++
++        
+         boolean useLeftMemory = true;
++        
+         if ( this.tupleMemoryEnabled ) {
+             memory.getLeftTupleMemory().add( leftTuple );
+         } else {
+@@ -98,7 +109,16 @@
+     public void assertObject(final InternalFactHandle factHandle,
+                              final PropagationContext context,
+                              final InternalWorkingMemory workingMemory) {
++        
+         final BetaMemory memory = (BetaMemory) workingMemory.getNodeMemory( this );
++        
++        if (rightUnlinked(context,
++                         workingMemory,
++                         memory)) {
++            context.setLatestPropagationAttempt();
++            return;
++        }
++        
+ 
+         RightTuple rightTuple = createRightTuple( factHandle,
+                                                   this );
+@@ -121,6 +141,8 @@
+                                                workingMemory,
+                                                factHandle );
+         int i = 0;
++        
++        // TODO lgomes: Do I really need to propagate when I know that the sink is an EmptyLeftTupleSinkAdapter
+         for ( LeftTuple leftTuple = memory.getLeftTupleMemory().getFirst( rightTuple ); leftTuple != null; leftTuple = (LeftTuple) leftTuple.getNext() ) {
+             if ( this.constraints.isAllowedCachedRight( memory.getContext(),
+                                                         leftTuple ) ) {
+@@ -138,14 +160,24 @@
+         this.constraints.resetFactHandle( memory.getContext() );
+     }
+ 
++
+     public void retractRightTuple(final RightTuple rightTuple,
+                                   final PropagationContext context,
+                                   final InternalWorkingMemory workingMemory) {
+         final BetaMemory memory = (BetaMemory) workingMemory.getNodeMemory( this );
++        
++        if (memory.isRightUnlinked()) {
++            return;
++        }
++        
+         behavior.retractRightTuple( memory.getBehaviorContext(),
+-                                    rightTuple,
+-                                    workingMemory );
++                rightTuple,
++                workingMemory );
++        
+         memory.getRightTupleMemory().remove( rightTuple );
++        
++        // Check if memory should be unlinked
++        //checkLeftUnlinking(memory);
+ 
+         if ( rightTuple.firstChild != null ) {
+             this.sink.propagateRetractRightTuple( rightTuple,
+@@ -154,11 +186,23 @@
+         }
+     }
+ 
++
+     public void retractLeftTuple(final LeftTuple leftTuple,
+                                  final PropagationContext context,
+                                  final InternalWorkingMemory workingMemory) {
++        
+         final BetaMemory memory = (BetaMemory) workingMemory.getNodeMemory( this );
++        
++        if (memory.isLeftUnlinked()) {
++            return;
++        }
++        
+         memory.getLeftTupleMemory().remove( leftTuple );
++        
++        // Check if right side should be unlinked.
++        //checkRightUnlinking(memory);
++        
++        
+         if ( leftTuple.firstChild != null ) {
+             this.sink.propagateRetractLeftTuple( leftTuple,
+                                                  context,
+@@ -170,6 +214,14 @@
+                                  final PropagationContext context,
+                                  final InternalWorkingMemory workingMemory) {
+         final BetaMemory memory = (BetaMemory) workingMemory.getNodeMemory( this );
++        
++        // Not really sure about this..
++//        if (rightUnlinked(context, workingMemory, memory)) {
++//            return;
++//        }
++        if (memory.isRightUnlinked()) {
++            return;
++        }
+ 
+         // WTD here
+         //                if ( !behavior.assertRightTuple( memory.getBehaviorContext(),
+@@ -268,7 +320,15 @@
+     public void modifyLeftTuple(final LeftTuple leftTuple,
+                                 final PropagationContext context,
+                                 final InternalWorkingMemory workingMemory) {
++        
+         final BetaMemory memory = (BetaMemory) workingMemory.getNodeMemory( this );
++        
++//        if (leftUnlinked(context, workingMemory, memory)) {
++//            return;
++//        }
++        if (memory.isLeftUnlinked()) {
++            return;
++        }
+ 
+         // Add and remove to make sure we are in the right bucket and at the end
+         // this is needed to fix for indexing and deterministic iteration
+@@ -359,7 +419,7 @@
+     public void updateSink(final LeftTupleSink sink,
+                            final PropagationContext context,
+                            final InternalWorkingMemory workingMemory) {
+-
++        
+         final BetaMemory memory = (BetaMemory) workingMemory.getNodeMemory( this );
+ 
+         final Iterator tupleIter = memory.getLeftTupleMemory().iterator();
+@@ -369,8 +429,10 @@
+                                               leftTuple );
+             for ( RightTuple rightTuple = memory.getRightTupleMemory().getFirst( leftTuple,
+                                                                                  (InternalFactHandle) context.getFactHandle() ); rightTuple != null; rightTuple = (RightTuple) rightTuple.getNext() ) {
+-                if ( this.constraints.isAllowedCachedLeft( memory.getContext(),
++            	
++                if (this.constraints.isAllowedCachedLeft( memory.getContext(),
+                                                            rightTuple.getFactHandle() ) ) {
++                	
+                     sink.assertLeftTuple( new LeftTuple( leftTuple,
+                                                          rightTuple,
+                                                          null,
+@@ -385,6 +447,12 @@
+             this.constraints.resetTuple( memory.getContext() );
+         }
+     }
++    
++    /** LGomes: Review where this method should be put.. */
++    public boolean shouldLeftPropagate(InternalWorkingMemory workingMemory) {
++    	BetaMemory memory = (BetaMemory) workingMemory.getNodeMemory((NodeMemory) this );
++        return !memory.isLeftUnlinked();                
++    }
+ 
+     public short getType() {
+         return NodeTypeEnums.JoinNode;
+@@ -398,4 +466,33 @@
+ 
+         return "[JoinNode(" + this.getId() + ") - " + ((ObjectTypeNode) source).getObjectType() + "]";
+     }
++
++    @Override
++    public void modifyLeftTuple(InternalFactHandle factHandle,
++            ModifyPreviousTuples modifyPreviousTuples,
++            PropagationContext context, InternalWorkingMemory workingMemory) {
++
++        BetaMemory memory = (BetaMemory) workingMemory.getNodeMemory(this);
++        
++        if (memory.isLeftUnlinked())
++            return;
++        
++        super.modifyLeftTuple(factHandle, modifyPreviousTuples, context, workingMemory);
++    }
++
++    @Override
++    public void modifyObject(InternalFactHandle factHandle,
++            ModifyPreviousTuples modifyPreviousTuples,
++            PropagationContext context, InternalWorkingMemory workingMemory) {
++        
++
++        BetaMemory memory = (BetaMemory) workingMemory.getNodeMemory(this);
++        
++        if (memory.isRightUnlinked())
++            return;
++        
++        super.modifyObject(factHandle, modifyPreviousTuples, context, workingMemory);
++    }
++    
++    
+ }
+Index: src/main/java/org/drools/core/util/LeftTupleList.java
+===================================================================
+--- src/main/java/org/drools/core/util/LeftTupleList.java	(revision 35925)
++++ src/main/java/org/drools/core/util/LeftTupleList.java	(working copy)
+@@ -217,4 +217,14 @@
+ 
+         return builder.toString();
+     }
++    
++    public void clear() {
++        
++        LeftTuple leftTuple = null; 
++        
++        while((leftTuple = (LeftTuple) iterator().next()) != null) {
++            remove(leftTuple);
++        }
++    }
++
+ }
+Index: src/main/java/org/drools/core/util/LeftTupleIndexHashTable.java
+===================================================================
+--- src/main/java/org/drools/core/util/LeftTupleIndexHashTable.java	(revision 35925)
++++ src/main/java/org/drools/core/util/LeftTupleIndexHashTable.java	(working copy)
+@@ -397,4 +397,16 @@
+         return builder.toString();
+     }
+ 
++    
++    public void clear() {
++        
++        LeftTuple leftTuple = null; 
++        
++        while((leftTuple = (LeftTuple) iterator().next()) != null) {
++            remove(leftTuple);
++        }
++    }
++    
++    
++
+ }
+Index: src/test/resources/org/drools/reteoo/test/LeftUnlinking.nodeTestCase
+===================================================================
+--- src/test/resources/org/drools/reteoo/test/LeftUnlinking.nodeTestCase	(revision 0)
++++ src/test/resources/org/drools/reteoo/test/LeftUnlinking.nodeTestCase	(revision 0)
+@@ -0,0 +1,103 @@
++TestCase "LeftUnlinking"
++
++Setup
++	ObjectTypeNode:
++	    otnLeft1, org.drools.Person;
++	LeftInputAdapterNode:
++	    lian0, otnLeft1;
++	ObjectTypeNode:
++	    otnRight1, org.drools.Person;
++	ObjectTypeNode:
++	    otnRight2, org.drools.Person;
++	Binding:
++	     p1, 0, org.drools.Person, age;
++	JoinNode:
++	    join1, lian0, otnRight1;
++	    age, !=, p1;
++	JoinNode:
++	    join2, join1, otnRight2;
++	    age, !=, p1;
++	Facts:
++	    new org.drools.Person('darth', 35), new org.drools.Person('bobba', 36),
++	    new org.drools.Person('yoda', 37), new org.drools.Person('luke', 38),
++	    new org.drools.Person('dave', 33), new org.drools.Person('bob', 32);
++
++Test "LeftUnlinking"	    
++	/**
++	 * check single left assertion and no memory population
++	 */
++	assert:
++	    otnLeft1, [h0];
++	join1:
++	    leftMemory, [];
++	join2:
++	    leftMemory, []; 
++	      
++	/**    
++	 * check double right assertion and retraction
++	 */
++	assert:
++	    otnRight1, [h1];
++	join1:
++        leftMemory, [[h0]];
++	    rightMemory, [h1];
++	join2:
++	    leftMemory, [];
++	    
++	    
++    assert:
++        otnRight2, [h2];
++    join2:
++    	leftMemory, [[h0,h1]];	        
++    	rightMemory, [h2];
++    	
++    	
++	retract:
++	    otnRight1, [h1];
++	    
++	// unlink left side, and clean memory	    
++	join1:
++        leftMemory, [];
++	    rightMemory, [];
++	join2:
++        leftMemory, [];
++	    rightMemory, [h2];
++	
++ 
++	retract:
++	    otnLeft1, [h0];
++	    
++    // right side should be empty, but not unlinked 	    
++	join1:
++	    rightMemory, [];
++        leftMemory, [];
++
++    // left is unlinked
++    assert:
++    	otnLeft1, [h5];
++    join1:
++    	leftMemory, [];        
++    	rightMemory, [];
++    	
++
++	// asserting right will now link and populate left.    	        
++    assert:
++    	otnRight1, [h1];
++    join1:
++    	leftMemory, [[h5]];
++    	rightMemory, [h1];
++    join2:
++    	leftMemory, [[h5, h1]];
++    	rightMemory, [h2];
++    	
++	// retracting h1
++
++	retract:
++		otnRight2, [h1];
++	join1:
++		rightMemory, []; 	// retracted
++		leftMemory, [];		// unlinked, since there's nothing to match with
++	join2:
++		leftMemory, [];		// retracted
++		rightMemory, [];	// unlinked, since there is nothing else to match on the other side
++
+Index: src/main/java/org/drools/reteoo/EmptyObjectSinkAdapter.java
+===================================================================
+--- src/main/java/org/drools/reteoo/EmptyObjectSinkAdapter.java	(revision 35925)
++++ src/main/java/org/drools/reteoo/EmptyObjectSinkAdapter.java	(working copy)
+@@ -95,5 +95,12 @@
+     }
+ 
+ 
++    public boolean shouldPropagate(InternalWorkingMemory workingMemory) {
++        return true;
++    }
++    
++    
+ 
++
++
+ }
